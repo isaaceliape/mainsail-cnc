@@ -1,11 +1,9 @@
-import vue from '@vitejs/plugin-vue2'
+import vue from '@vitejs/plugin-vue'
 import version from 'vite-plugin-package-version'
 import { defineConfig } from 'vite'
 
 import Components from 'unplugin-vue-components/vite'
-import { VuetifyResolver } from 'unplugin-vue-components/resolvers'
-import { checker } from 'vite-plugin-checker'
-
+import { Vuetify3Resolver } from 'unplugin-vue-components/resolvers'
 import path from 'path'
 import buildVersion from './src/plugins/build-version'
 import buildReleaseInfo from './src/plugins/build-release_info'
@@ -81,15 +79,9 @@ export default defineConfig({
         buildReleaseInfo(),
         vue(),
         version(),
-        checker({
-            typescript: {
-                root: path.resolve(__dirname),
-                buildMode: false,
-            },
-        }),
         Components({
-            dts: true, // enabled by default if `typescript` is installed
-            resolvers: [VuetifyResolver()],
+            dts: true,
+            resolvers: [Vuetify3Resolver()],
         }),
     ],
 
