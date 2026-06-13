@@ -48,7 +48,6 @@ const vuetify = createVuetify({
         },
     },
     defaults: {
-        VBtn: { variant: 'text' },
         VSwitch: { color: 'accent' },
     },
     display: {
