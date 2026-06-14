@@ -259,7 +259,3 @@ class CncAgentTests(unittest.TestCase):
             server.klippy_apis.scripts[-1],
             "SAVE_GCODE_STATE NAME=_ui_movement\nG91\nG1 X5 F6000\nRESTORE_GCODE_STATE NAME=_ui_movement",
         )
-
-
-if __name__ == "__main__":
-    unittest.main(verbosity=2)
