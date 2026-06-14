@@ -80,32 +80,43 @@
                     @click="onSelectWcs(entry.name)"
                     style="cursor: pointer">
                     <rect
-                        :x="toSvgX(entry.clippedMaxX)"
+                        :x="toSvgX(entry.clippedMinX)"
                         :y="toSvgY(entry.clippedMaxY)"
-                        :width="Math.max(0, toSvgX(entry.clippedMinX) - toSvgX(entry.clippedMaxX))"
+                        :width="Math.max(0, toSvgX(entry.clippedMaxX) - toSvgX(entry.clippedMinX))"
                         :height="Math.max(0, toSvgY(entry.clippedMinY) - toSvgY(entry.clippedMaxY))"
                         :fill="entry.color"
                         :stroke="entry.color"
                         :stroke-width="entry.name === activeWcs ? 2 : 1"
                         :stroke-dasharray="entry.name === activeWcs ? 'none' : '4 2'"
-                        :opacity="entry.name === activeWcs ? 0.25 : 0.12" />
-                    <!-- Origin crosshair for active WCS -->
-                    <template v-if="entry.name === activeWcs">
-                        <line
-                            :x1="toSvgX(entry.offsetX) - 5"
-                            :y1="toSvgY(entry.offsetY)"
-                            :x2="toSvgX(entry.offsetX) + 5"
-                            :y2="toSvgY(entry.offsetY)"
-                            :stroke="entry.color"
-                            stroke-width="1.5" />
-                        <line
-                            :x1="toSvgX(entry.offsetX)"
-                            :y1="toSvgY(entry.offsetY) - 5"
-                            :x2="toSvgX(entry.offsetX)"
-                            :y2="toSvgY(entry.offsetY) + 5"
-                            :stroke="entry.color"
-                            stroke-width="1.5" />
-                    </template>
+                        :opacity="entry.name === activeWcs ? 0.3 : 0.15" />
+                    <!-- Origin crosshair for all offsets -->
+                    <line
+                        :x1="toSvgX(entry.offsetX) - 5"
+                        :y1="toSvgY(entry.offsetY)"
+                        :x2="toSvgX(entry.offsetX) + 5"
+                        :y2="toSvgY(entry.offsetY)"
+                        :stroke="entry.color"
+                        :stroke-width="entry.name === activeWcs ? 1.5 : 1"
+                        :opacity="entry.name === activeWcs ? 1 : 0.6" />
+                    <line
+                        :x1="toSvgX(entry.offsetX)"
+                        :y1="toSvgY(entry.offsetY) - 5"
+                        :x2="toSvgX(entry.offsetX)"
+                        :y2="toSvgY(entry.offsetY) + 5"
+                        :stroke="entry.color"
+                        :stroke-width="entry.name === activeWcs ? 1.5 : 1"
+                        :opacity="entry.name === activeWcs ? 1 : 0.6" />
+                    <!-- Label at offset origin -->
+                    <text
+                        :x="toSvgX(entry.offsetX) + 7"
+                        :y="toSvgY(entry.offsetY) - 6"
+                        :fill="entry.color"
+                        font-size="8"
+                        font-family="monospace"
+                        :font-weight="entry.name === activeWcs ? 'bold' : 'normal'"
+                        :opacity="entry.name === activeWcs ? 1 : 0.7">
+                        {{ entry.name }}
+                    </text>
                 </g>
 
                 <!-- Snap crosshair indicator -->
