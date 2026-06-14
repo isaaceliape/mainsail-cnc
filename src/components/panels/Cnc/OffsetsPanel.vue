@@ -144,8 +144,10 @@ import {
     mdiCheck,
     mdiRestart,
 } from '@mdi/js'
+import { useToast } from 'vue-toast-notification'
 import { getCncWcs, selectCncWcs, setCncZero } from '@/store/files/cncApi'
 
+const toast = useToast()
 const { klipperReadyForGui } = useBase()
 const { doSend } = useControl()
 const { showWorkCoords, requireConfirmForZeroReset, requireHomingBeforeOffsets } = useCncProfile()
@@ -204,7 +206,7 @@ async function refreshActiveWcs() {
         }
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to load active WCS'
-        useToast().error(message)
+        toast.error(message)
     }
 }
 
@@ -220,7 +222,7 @@ async function onWcsChange(idx: number | null) {
         selectedOffsetIndex.value = idx
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to change work coordinate system'
-        useToast().error(message)
+        toast.error(message)
     }
 }
 
@@ -230,7 +232,7 @@ async function setWorkZeroXY() {
         await setCncZero(store.getters['socket/getUrl'], { axes: ['X', 'Y'] })
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to set XY zero'
-        useToast().error(message)
+        toast.error(message)
     }
 }
 
@@ -240,7 +242,7 @@ async function setWorkZeroZ() {
         await setCncZero(store.getters['socket/getUrl'], { axes: ['Z'] })
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to set Z zero'
-        useToast().error(message)
+        toast.error(message)
     }
 }
 

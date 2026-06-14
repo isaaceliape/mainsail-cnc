@@ -99,8 +99,10 @@ import { useControl } from '@/composables/useControl'
 import { useCncProfile } from '@/composables/useCncProfile'
 import Panel from '@/components/ui/Panel.vue'
 import { mdiFan, mdiPlay, mdiStop, mdiRotate3dVariant, mdiWater, mdiSpray } from '@mdi/js'
+import { useToast } from 'vue-toast-notification'
 import { setCncCoolant, setCncSpindle } from '@/store/files/cncApi'
 
+const toast = useToast()
 const { klipperReadyForGui } = useBase()
 useControl()
 const { spindleEnabled, coolantEnabled, requireConfirmForSpindleStart } = useCncProfile()
@@ -151,7 +153,7 @@ async function sendSpindle(state: 'off' | 'cw' | 'ccw') {
         })
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to update spindle'
-        useToast().error(message)
+        toast.error(message)
     }
 }
 
@@ -181,7 +183,7 @@ async function sendCoolant(payload: { flood?: boolean; mist?: boolean }) {
         })
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to update coolant'
-        useToast().error(message)
+        toast.error(message)
     }
 }
 </script>

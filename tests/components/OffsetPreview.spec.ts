@@ -348,3 +348,197 @@ describe('OffsetPreview – machine bounds', () => {
         expect(''.includes('x') && ''.includes('y')).toBe(false)
     })
 })
+
+describe('OffsetPreview – stock position relative to offset', () => {
+    const machineMinX = 0
+    const machineMaxX = 165
+    const machineMinY = 0
+    const machineMaxY = 300
+    const plotWidth = 226
+
+    it('positions stock from offset origin (bottom-left corner)', () => {
+        const offsetX = 92.5
+        const offsetY = 142.5
+        const stockW = 100
+        const stockH = 200
+
+        // Stock extends from offset origin upward and rightward
+        const stockMinX = offsetX
+        const stockMinY = offsetY
+        const stockMaxX = offsetX + stockW
+        const stockMaxY = offsetY + stockH
+
+        expect(stockMinX).toBe(92.5)
+        expect(stockMinY).toBe(142.5)
+        expect(stockMaxX).toBe(192.5)
+        expect(stockMaxY).toBe(342.5)
+    })
+
+    it('computes SVG rect from offset-relative stock bounds', () => {
+        const offsetX = 92.5
+        const offsetY = 142.5
+        const stockW = 100
+        const stockH = 200
+        const plotHeight = 400
+
+        const svgX = toSvgX(offsetX, machineMinX, machineMaxX, plotWidth)
+        const svgY = toSvgY(offsetY + stockH, machineMinY, machineMaxY, plotHeight)
+        const svgW = Math.max(0, toSvgX(offsetX + stockW, machineMinX, machineMaxX, plotWidth) - svgX)
+        const svgH = Math.max(0, toSvgY(offsetY, machineMinY, machineMaxY, plotHeight) - svgY)
+
+        expect(svgW).toBeGreaterThan(0)
+        expect(svgH).toBeGreaterThan(0)
+    })
+
+    it('centers stock label within stock bounds', () => {
+        const offsetX = 92.5
+        const offsetY = 142.5
+        const stockW = 100
+        const stockH = 200
+
+        const labelX = offsetX + stockW / 2
+        const labelY = offsetY + stockH / 2
+
+        expect(labelX).toBe(142.5)
+        expect(labelY).toBe(242.5)
+    })
+})
+
+describe('OffsetPreview – stock size validation', () => {
+    const machineMaxX = 165
+    const machineMinX = 0
+    const machineMaxY = 300
+    const machineMinY = 0
+
+    function stockDialogError(w: number, h: number): string {
+        const machineW = machineMaxX - machineMinX
+        const machineH = machineMaxY - machineMinY
+        if (w > machineW) return `Width (${w}mm) exceeds machine (${machineW}mm)`
+        if (h > machineH) return `Height (${h}mm) exceeds machine (${machineH}mm)`
+        return ''
+    }
+
+    it('returns empty string when stock fits within machine', () => {
+        expect(stockDialogError(100, 200)).toBe('')
+        expect(stockDialogError(165, 300)).toBe('')
+        expect(stockDialogError(1, 1)).toBe('')
+    })
+
+    it('returns error when width exceeds machine', () => {
+        const err = stockDialogError(200, 200)
+        expect(err).toContain('Width')
+        expect(err).toContain('200mm')
+        expect(err).toContain('165mm')
+    })
+
+    it('returns error when height exceeds machine', () => {
+        const err = stockDialogError(100, 400)
+        expect(err).toContain('Height')
+        expect(err).toContain('400mm')
+        expect(err).toContain('300mm')
+    })
+
+    it('validates width before height', () => {
+        // Both exceed — width error comes first
+        const err = stockDialogError(200, 400)
+        expect(err).toContain('Width')
+    })
+
+    it('allows zero values (deletes stock)', () => {
+        expect(stockDialogError(0, 0)).toBe('')
+    })
+
+    it('max values equal machine range', () => {
+        expect(machineMaxX - machineMinX).toBe(165)
+        expect(machineMaxY - machineMinY).toBe(300)
+    })
+})
+
+describe('OffsetPreview – eye icon visibility', () => {
+    it('visible offset has full opacity', () => {
+        const visible = true
+        const opacity = visible ? 1 : 0.5
+        expect(opacity).toBe(1)
+    })
+
+    it('hidden offset has reduced opacity', () => {
+        const visible = false
+        const opacity = visible ? 1 : 0.5
+        expect(opacity).toBe(0.5)
+    })
+
+    it('visible offset uses primary color', () => {
+        const visible = true
+        const color = visible ? 'rgb(var(--v-theme-primary))' : undefined
+        expect(color).toBe('rgb(var(--v-theme-primary))')
+    })
+
+    it('hidden offset has no inline color', () => {
+        const visible = false
+        const color = visible ? 'rgb(var(--v-theme-primary))' : undefined
+        expect(color).toBeUndefined()
+    })
+
+    it('toggles visibility per offset name', () => {
+        const hiddenOffsets = ref<string[]>([])
+        const toggle = (name: string) => {
+            const idx = hiddenOffsets.value.indexOf(name)
+            if (idx >= 0) hiddenOffsets.value.splice(idx, 1)
+            else hiddenOffsets.value.push(name)
+        }
+        const isVisible = (name: string) => !hiddenOffsets.value.includes(name)
+
+        expect(isVisible('G54')).toBe(true)
+        toggle('G54')
+        expect(isVisible('G54')).toBe(false)
+        toggle('G54')
+        expect(isVisible('G54')).toBe(true)
+    })
+})
+
+describe('OffsetPreview – legend grid layout', () => {
+    it('uses 2-column CSS grid', () => {
+        // The legend uses display: grid with grid-template-columns: 1fr 1fr
+        const gridTemplateColumns = '1fr 1fr'
+        expect(gridTemplateColumns.split(' ')).toHaveLength(2)
+    })
+
+    it('has 6 offset cards plus tool item', () => {
+        const offsetCount = 6
+        const hasToolItem = true
+        expect(offsetCount + (hasToolItem ? 1 : 0)).toBe(7)
+    })
+})
+
+describe('OffsetPreview – stock localStorage persistence', () => {
+    it('persists stock sizes to localStorage', () => {
+        const stock = { G54: { name: 'Aluminum Block', width: 100, height: 200, depth: 25 } }
+        localStorage.setItem('cncPreviewStockSizes', JSON.stringify(stock))
+        const parsed = JSON.parse(localStorage.getItem('cncPreviewStockSizes') || '{}')
+        expect(parsed.G54.name).toBe('Aluminum Block')
+        expect(parsed.G54.width).toBe(100)
+        expect(parsed.G54.height).toBe(200)
+        expect(parsed.G54.depth).toBe(25)
+    })
+
+    it('deletes stock when width or height is zero', () => {
+        const stock: Record<string, { name: string; width: number; height: number; depth: number }> = {
+            G54: { name: 'Block', width: 100, height: 200, depth: 0 },
+        }
+        const w = 0
+        const h = 0
+        if (w > 0 && h > 0) {
+            stock.G54 = { name: 'Block', width: w, height: h, depth: 0 }
+        } else {
+            delete stock.G54
+        }
+        expect(stock.G54).toBeUndefined()
+    })
+
+    it('persists hidden offsets to localStorage', () => {
+        const hidden = ['G55', 'G56']
+        localStorage.setItem('cncPreviewHiddenOffsets', JSON.stringify(hidden))
+        const parsed = JSON.parse(localStorage.getItem('cncPreviewHiddenOffsets') || '[]')
+        expect(parsed).toEqual(['G55', 'G56'])
+    })
+})

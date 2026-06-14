@@ -75,6 +75,7 @@
                 <g
                     v-for="(entry, idx) in sortedOffsets"
                     :key="'wcs-' + entry.name"
+                    v-show="isOffsetVisible(entry.name)"
                     class="offset-rect-group"
                     :class="{ 'offset-rect--active': entry.name === activeWcs }"
                     @click="onSelectWcs(entry.name)"
@@ -114,8 +115,40 @@
                         font-size="8"
                         font-family="monospace"
                         :font-weight="entry.name === activeWcs ? 'bold' : 'normal'"
-                        :opacity="entry.name === activeWcs ? 1 : 0.7">
+                        :opacity="entry.name === activeWcs ? 1 : 0.7"
+                        style="cursor: pointer"
+                        @click.stop="openStockDialog(entry.name)">
                         {{ entry.name }}
+                    </text>
+                </g>
+
+                <!-- Stock size rectangles (origin at bottom-left of stock) -->
+                <g
+                    v-for="entry in allOffsetEntries"
+                    :key="'stock-' + entry.name"
+                    v-show="isOffsetVisible(entry.name)"
+                    style="pointer-events: none">
+                    <rect
+                        v-if="stockSizes[entry.name]"
+                        :x="toSvgX(entry.offsetX)"
+                        :y="toSvgY(entry.offsetY + stockSizes[entry.name].height)"
+                        :width="Math.max(0, toSvgX(entry.offsetX + stockSizes[entry.name].width) - toSvgX(entry.offsetX))"
+                        :height="Math.max(0, toSvgY(entry.offsetY) - toSvgY(entry.offsetY + stockSizes[entry.name].height))"
+                        :fill="entry.color"
+                        :stroke="entry.color"
+                        stroke-width="1.5"
+                        fill-opacity="0.08"
+                        stroke-opacity="0.6" />
+                    <text
+                        v-if="stockSizes[entry.name]"
+                        :x="toSvgX(entry.offsetX + stockSizes[entry.name].width / 2)"
+                        :y="toSvgY(entry.offsetY + stockSizes[entry.name].height / 2) + 3"
+                        text-anchor="middle"
+                        :fill="entry.color"
+                        font-size="7"
+                        font-family="monospace"
+                        opacity="0.7">
+                        {{ stockSizes[entry.name].name || entry.name }}
                     </text>
                 </g>
 
@@ -179,17 +212,45 @@
                 <div
                     v-for="entry in visibleOffsets"
                     :key="'legend-' + entry.name"
-                    class="offset-preview-legend__item"
-                    :class="{ 'offset-preview-legend__item--active': entry.name === activeWcs }"
+                    class="offset-preview-legend__card"
+                    :class="{ 'offset-preview-legend__card--active': entry.name === activeWcs }"
+                    :style="{ borderColor: entry.color }"
                     @click="onSelectWcs(entry.name)"
                     style="cursor: pointer">
-                    <span
-                        class="offset-preview-legend__swatch"
-                        :style="{ backgroundColor: entry.color }" />
-                    <span class="offset-preview-legend__label">{{ entry.name }}</span>
-                    <span class="offset-preview-legend__coords">
-                        ({{ entry.offsetX.toFixed(1) }}, {{ entry.offsetY.toFixed(1) }})
-                    </span>
+                    <div class="offset-preview-legend__card-header">
+                        <span
+                            class="offset-preview-legend__swatch"
+                            :style="{ backgroundColor: entry.color }" />
+                        <span class="offset-preview-legend__card-title">{{ entry.name }}</span>
+                        <span class="offset-preview-legend__card-origin">
+                            ({{ entry.offsetX.toFixed(1) }}, {{ entry.offsetY.toFixed(1) }})
+                        </span>
+                        <v-icon
+                            size="x-small"
+                            class="offset-preview-legend__card-eye"
+                            :style="{ color: isOffsetVisible(entry.name) ? 'rgb(var(--v-theme-primary))' : undefined, opacity: isOffsetVisible(entry.name) ? 1 : 0.5 }"
+                            @click.stop="toggleOffsetVisibility(entry.name)">
+                            {{ isOffsetVisible(entry.name) ? mdiEye : mdiEyeOff }}
+                        </v-icon>
+                    </div>
+                    <div
+                        v-if="stockSizes[entry.name]"
+                        class="offset-preview-legend__card-stock"
+                        @click.stop="openStockDialog(entry.name)"
+                        style="cursor: pointer">
+                        <div class="offset-preview-legend__card-stock-name">
+                            {{ stockSizes[entry.name].name || entry.name }}
+                        </div>
+                        <div class="offset-preview-legend__card-stock-dims">
+                            <span>{{ stockSizes[entry.name].width }}W</span>
+                            <span class="offset-preview-legend__card-sep">&times;</span>
+                            <span>{{ stockSizes[entry.name].height }}H</span>
+                            <template v-if="stockSizes[entry.name].depth">
+                                <span class="offset-preview-legend__card-sep">&times;</span>
+                                <span>{{ stockSizes[entry.name].depth }}D</span>
+                            </template>
+                        </div>
+                    </div>
                 </div>
                 <div class="offset-preview-legend__item offset-preview-legend__item--tool">
                     <span class="offset-preview-legend__swatch offset-preview-legend__swatch--tool" />
@@ -210,6 +271,77 @@
                 </div>
             </Teleport>
         </div>
+
+        <!-- Stock size dialog -->
+        <v-dialog v-model="stockDialogOpen" max-width="320">
+            <v-card>
+                <v-card-title class="text-subtitle-1">
+                    Stock — {{ stockDialogWcs }}
+                </v-card-title>
+                <v-card-text>
+                    <v-row dense>
+                        <v-col cols="12">
+                            <v-text-field
+                                v-model="stockDialogName"
+                                label="Name"
+                                density="compact"
+                                variant="outlined"
+                                :placeholder="stockDialogWcs" />
+                        </v-col>
+                    </v-row>
+                    <v-row dense>
+                        <v-col cols="4">
+                            <v-text-field
+                                v-model.number="stockDialogWidth"
+                                label="Width (mm)"
+                                type="number"
+                                density="compact"
+                                variant="outlined"
+                                :min="0"
+                                :max="machineMaxX - machineMinX"
+                                :error="stockDialogWidth > machineMaxX - machineMinX"
+                                :hint="stockDialogWidth > machineMaxX - machineMinX ? `Max: ${machineMaxX - machineMinX}mm` : undefined"
+                                persistent-hint />
+                        </v-col>
+                        <v-col cols="4">
+                            <v-text-field
+                                v-model.number="stockDialogHeight"
+                                label="Height (mm)"
+                                type="number"
+                                density="compact"
+                                variant="outlined"
+                                :min="0"
+                                :max="machineMaxY - machineMinY"
+                                :error="stockDialogHeight > machineMaxY - machineMinY"
+                                :hint="stockDialogHeight > machineMaxY - machineMinY ? `Max: ${machineMaxY - machineMinY}mm` : undefined"
+                                persistent-hint />
+                        </v-col>
+                        <v-col cols="4">
+                            <v-text-field
+                                v-model.number="stockDialogDepth"
+                                label="Depth (mm)"
+                                type="number"
+                                density="compact"
+                                variant="outlined"
+                                :min="0" />
+                        </v-col>
+                    </v-row>
+                    <v-alert
+                        v-if="stockDialogError"
+                        type="error"
+                        density="compact"
+                        class="mt-2"
+                        variant="tonal">
+                        {{ stockDialogError }}
+                    </v-alert>
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer />
+                    <v-btn variant="text" size="small" @click="stockDialogOpen = false">Cancel</v-btn>
+                    <v-btn variant="text" size="small" color="primary" :disabled="!!stockDialogError" @click="saveStockDialog">Save</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
     </panel>
 </template>
 
@@ -220,10 +352,11 @@ import { useBase } from '@/composables/useBase'
 import { useCncProfile } from '@/composables/useCncProfile'
 import { useToast } from 'vue-toast-notification'
 import Panel from '@/components/ui/Panel.vue'
-import { mdiGrid, mdiChevronDown, mdiMagnet } from '@mdi/js'
+import { mdiGrid, mdiChevronDown, mdiMagnet, mdiEye, mdiEyeOff } from '@mdi/js'
 import { getCncWcs, selectCncWcs } from '@/store/files/cncApi'
 import { getSocket } from '@/store/runtime'
 
+const toast = useToast()
 const { klipperReadyForGui } = useBase()
 const { showWorkCoords } = useCncProfile()
 const store = useStore()
@@ -241,8 +374,95 @@ const plotHeight = computed(() => svgHeight.value - padding - 16)
 const gridStepOptions = [5, 10, 15, 20, 25, 30, 50, 100]
 const gridStep = ref(Number(localStorage.getItem('cncPreviewGridStep')) || 10)
 const snapToGrid = ref(localStorage.getItem('cncPreviewSnapToGrid') === 'true')
+const hiddenOffsets = ref<Set<string>>(loadHiddenOffsets())
 watch(gridStep, (v) => localStorage.setItem('cncPreviewGridStep', String(v)))
 watch(snapToGrid, (v) => localStorage.setItem('cncPreviewSnapToGrid', String(v)))
+watch(hiddenOffsets, (v) => {
+    localStorage.setItem('cncPreviewHiddenOffsets', JSON.stringify([...v]))
+}, { deep: true })
+
+function loadHiddenOffsets(): Set<string> {
+    try {
+        const raw = localStorage.getItem('cncPreviewHiddenOffsets')
+        if (raw) return new Set(JSON.parse(raw))
+    } catch { /* ignore */ }
+    return new Set()
+}
+
+function isOffsetVisible(name: string): boolean {
+    return !hiddenOffsets.value.has(name)
+}
+
+function toggleOffsetVisibility(name: string) {
+    const next = new Set(hiddenOffsets.value)
+    if (next.has(name)) {
+        next.delete(name)
+    } else {
+        next.add(name)
+    }
+    hiddenOffsets.value = next
+}
+
+interface StockSize {
+    name: string
+    width: number
+    height: number
+    depth: number
+}
+
+const stockSizes = ref<Record<string, StockSize>>({})
+const stockDialogOpen = ref(false)
+const stockDialogWcs = ref('')
+const stockDialogName = ref('')
+const stockDialogWidth = ref(0)
+const stockDialogHeight = ref(0)
+const stockDialogDepth = ref(0)
+
+function loadStockSizes() {
+    try {
+        const raw = localStorage.getItem('cncPreviewStockSizes')
+        if (raw) stockSizes.value = JSON.parse(raw)
+    } catch { /* ignore */ }
+}
+
+function saveStockSizes() {
+    localStorage.setItem('cncPreviewStockSizes', JSON.stringify(stockSizes.value))
+}
+
+function openStockDialog(wcsName: string) {
+    stockDialogWcs.value = wcsName
+    const existing = stockSizes.value[wcsName]
+    stockDialogName.value = existing?.name ?? wcsName
+    stockDialogWidth.value = existing?.width ?? 0
+    stockDialogHeight.value = existing?.height ?? 0
+    stockDialogDepth.value = existing?.depth ?? 0
+    stockDialogOpen.value = true
+}
+
+function saveStockDialog() {
+    if (stockDialogError.value) return
+    const name = stockDialogName.value.trim() || stockDialogWcs.value
+    const w = stockDialogWidth.value
+    const h = stockDialogHeight.value
+    const d = stockDialogDepth.value
+    if (w > 0 && h > 0) {
+        stockSizes.value[stockDialogWcs.value] = { name, width: w, height: h, depth: d }
+    } else {
+        delete stockSizes.value[stockDialogWcs.value]
+    }
+    saveStockSizes()
+    stockDialogOpen.value = false
+}
+
+const stockDialogError = computed(() => {
+    const w = stockDialogWidth.value
+    const h = stockDialogHeight.value
+    const machineW = machineMaxX.value - machineMinX.value
+    const machineH = machineMaxY.value - machineMinY.value
+    if (w > machineW) return `Width (${w}mm) exceeds machine (${machineW}mm)`
+    if (h > machineH) return `Height (${h}mm) exceeds machine (${machineH}mm)`
+    return ''
+})
 
 const offsetNames = ['G54', 'G55', 'G56', 'G57', 'G58', 'G59']
 const offsetColors = ['#42A5F5', '#66BB6A', '#FFA726', '#AB47BC', '#EF5350', '#26C6DA']
@@ -373,7 +593,7 @@ async function refreshWcs() {
         }
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to load WCS'
-        useToast().error(message)
+        toast.error(message)
     }
 }
 
@@ -385,7 +605,7 @@ async function onSelectWcs(name: string) {
         activeWcs.value = name
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to change WCS'
-        useToast().error(message)
+        toast.error(message)
     }
 }
 
@@ -458,6 +678,7 @@ function onSvgClick(e: MouseEvent) {
 }
 
 onMounted(() => {
+    loadStockSizes()
     void refreshWcs()
 })
 </script>
@@ -478,9 +699,9 @@ onMounted(() => {
 }
 
 .offset-preview-legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
     margin-top: 6px;
 }
 
@@ -495,11 +716,6 @@ onMounted(() => {
 
 .offset-preview-legend__item:hover {
     opacity: 1;
-}
-
-.offset-preview-legend__item--active {
-    opacity: 1;
-    font-weight: 600;
 }
 
 .offset-preview-legend__swatch {
@@ -525,6 +741,77 @@ onMounted(() => {
     color: rgba(255, 255, 255, 0.45);
     font-family: monospace;
     font-size: 10px;
+}
+
+.offset-preview-legend__card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid;
+    border-radius: 4px;
+    padding: 6px 8px;
+    min-width: 0;
+    width: 100%;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+}
+
+.offset-preview-legend__card:hover {
+    opacity: 1;
+}
+
+.offset-preview-legend__card--active {
+    opacity: 1;
+}
+
+.offset-preview-legend__card-header {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.offset-preview-legend__card-eye {
+    margin-left: auto;
+    transition: opacity 0.15s;
+}
+
+.offset-preview-legend__card:hover .offset-preview-legend__card-eye {
+    opacity: 1;
+}
+
+.offset-preview-legend__card-title {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 600;
+    font-size: 11px;
+}
+
+.offset-preview-legend__card-origin {
+    color: rgba(255, 255, 255, 0.4);
+    font-family: monospace;
+    font-size: 10px;
+}
+
+.offset-preview-legend__card-stock {
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.offset-preview-legend__card-stock-name {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 10px;
+    margin-bottom: 2px;
+}
+
+.offset-preview-legend__card-stock-dims {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    color: rgba(255, 255, 255, 0.45);
+    font-family: monospace;
+    font-size: 10px;
+}
+
+.offset-preview-legend__card-sep {
+    opacity: 0.4;
 }
 
 .offset-preview-tooltip {

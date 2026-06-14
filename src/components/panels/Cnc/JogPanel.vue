@@ -1,12 +1,12 @@
 <template>
     <panel v-if="klipperReadyForGui" :icon="mdiGamepad" title="Jog" :collapsible="true" card-class="jog-panel">
-        <v-container class="py-2">
+        <v-container class="pa-2">
             <v-row density="compact" class="mb-3">
                 <v-col cols="12">
  <v-btn
                         size="small"
                         class="d-block w-100"
-                        :disabled="['printing'].includes(printer_state) || !allAxesHomed"
+                        :disabled="['printing'].includes(printer_state)"
                         :loading="loadings.includes('homeAll')"
                         :color="homedAxes.includes('xyz') ? 'primary' : 'warning'"
                         @click="doHome">
@@ -18,7 +18,7 @@
  <v-btn
                         size="small"
                         class="d-block w-100"
-                        :disabled="['printing'].includes(printer_state) || !allAxesHomed"
+                        :disabled="['printing'].includes(printer_state)"
                         :loading="loadings.includes('homeXY')"
                         :color="homedAxes.includes('xy') ? 'primary' : 'warning'"
                         @click="doHomeXY">
@@ -30,7 +30,7 @@
  <v-btn
                         size="small"
                         class="d-block w-100"
-                        :disabled="['printing'].includes(printer_state) || !allAxesHomed"
+                        :disabled="['printing'].includes(printer_state)"
                         :loading="loadings.includes('homeZ')"
                         :color="homedAxes.includes('z') ? 'primary' : 'warning'"
                         @click="doHomeZ">
@@ -102,14 +102,14 @@
  <v-btn
                             class="jog-panel__xy-btn"
                             size="large"
-                            :disabled="['printing'].includes(printer_state) || !allAxesHomed"
+                            :disabled="['printing'].includes(printer_state) || !xyHomed"
                             @click="jog('Y', currentStep)">
                             <v-icon>{{ mdiChevronUp }}</v-icon>
                         </v-btn>
  <v-btn
                             class="jog-panel__xy-btn"
                             size="large"
-                            :disabled="['printing'].includes(printer_state) || !allAxesHomed"
+                            :disabled="['printing'].includes(printer_state) || !xyHomed"
                             @click="jog('X', -currentStep)">
                             <v-icon>{{ mdiChevronLeft }}</v-icon>
                         </v-btn>
@@ -117,21 +117,21 @@
                             class="jog-panel__xy-btn jog-panel__xy-center"
                             size="large"
                             variant="outlined"
-                            :disabled="['printing'].includes(printer_state) || !allAxesHomed"
+                            :disabled="['printing'].includes(printer_state) || !xyHomed"
                             @click="jogStop">
                             <v-icon>{{ mdiStop }}</v-icon>
                         </v-btn>
  <v-btn
                             class="jog-panel__xy-btn"
                             size="large"
-                            :disabled="['printing'].includes(printer_state) || !allAxesHomed"
+                            :disabled="['printing'].includes(printer_state) || !xyHomed"
                             @click="jog('X', currentStep)">
                             <v-icon>{{ mdiChevronRight }}</v-icon>
                         </v-btn>
  <v-btn
                             class="jog-panel__xy-btn"
                             size="large"
-                            :disabled="['printing'].includes(printer_state) || !allAxesHomed"
+                            :disabled="['printing'].includes(printer_state) || !xyHomed"
                             @click="jog('Y', -currentStep)">
                             <v-icon>{{ mdiChevronDown }}</v-icon>
                         </v-btn>
@@ -145,7 +145,7 @@
  <v-btn
                         class="jog-panel__jog-btn mb-2 d-block w-100"
                         size="large"
-                        :disabled="['printing'].includes(printer_state) || !allAxesHomed"
+                        :disabled="['printing'].includes(printer_state) || !zHomed"
                         @click="jog('Z', currentStep)">
                         <v-icon>{{ mdiChevronUp }}</v-icon>
                         <span class="ml-2">+{{ currentStep }}</span>
@@ -153,7 +153,7 @@
  <v-btn
                         class="jog-panel__jog-btn d-block w-100"
                         size="large"
-                        :disabled="['printing'].includes(printer_state) || !allAxesHomed"
+                        :disabled="['printing'].includes(printer_state) || !zHomed"
                         @click="jog('Z', -currentStep)">
                         <v-icon>{{ mdiChevronDown }}</v-icon>
                         <span class="ml-2">-{{ currentStep }}</span>
@@ -213,12 +213,14 @@ import {
     mdiKeyboard,
 } from '@mdi/js'
 import { updateCncSettings } from '@/store/files/cncApi'
+import { useToast } from 'vue-toast-notification'
 
-const { printer_state, klipperReadyForGui } = useBase()
+const { printer_state, klipperReadyForGui, socketIsConnected } = useBase()
 const { homedAxes, doHome, doHomeXY, doHomeZ, doSend } = useControl()
 
 const store = useStore()
 const socket = useSocket()
+const toast = useToast()
 
 const keyboardNavEnabled = ref(false)
 const jogSteps = [1.0, 5.0, 10.0, 25.0, 100.0]
@@ -245,6 +247,14 @@ const allAxesHomed = computed(() =>
     homedAxes.value.includes('x') && homedAxes.value.includes('y') && homedAxes.value.includes('z')
 )
 
+const xyHomed = computed(() =>
+    homedAxes.value.includes('x') && homedAxes.value.includes('y')
+)
+
+const zHomed = computed(() =>
+    homedAxes.value.includes('z')
+)
+
 const loadings = computed(() => store.state.server.loadings ?? [])
 
 const feedrateXY = computed({
@@ -267,7 +277,7 @@ function saveFeedrates() {
         feedrateZ: feedrateZ.value,
     }).catch((error: unknown) => {
         const message = error instanceof Error ? error.message : 'Failed to persist CNC feedrates'
-        useToast().error(message)
+        toast.error(message)
     })
 }
 
@@ -277,8 +287,8 @@ function formatStep(step: number): string {
 }
 
 function jog(axis: string, distance: number) {
-    if (!useBase().socketIsConnected.value) {
-        useToast().error('Cannot jog — not connected to printer')
+    if (!socketIsConnected.value) {
+        toast.error('Cannot jog — not connected to printer')
         return
     }
 
@@ -391,10 +401,6 @@ onBeforeUnmount(() => {
 .jog-panel__xy-pad .v-btn:nth-child(5) {
     grid-column: 2;
     grid-row: 3;
-}
-
-.jog-panel .v-container {
-    padding: 4px !important;
 }
 
 .jog-panel .v-row {
