@@ -393,3 +393,14 @@ onBeforeUnmount(() => {
     grid-row: 3;
 }
 </style>
+
+<style>
+.jog-panel {
+    background-color: rgb(30, 30, 30) !important;
+}
+
+.jog-panel .v-btn-toggle .v-btn,
+.jog-panel .jog-panel__xy-btn {
+    background-color: rgb(39, 39, 39) !important;
+}
+</style>
