@@ -42,7 +42,6 @@
                 v-if="command !== null"
                 :name="name"
                 :target="target"
-                :presets="presets"
                 :min_temp="min_temp"
                 :max_temp="max_temp"
                 :command="command"
@@ -219,10 +218,6 @@ const rpmClass = computed(() => {
     if (rpm.value === 0 && (printerObject.value.speed ?? 0) > 0) return 'text-error'
     return ''
 })
-
-const presets = computed(() =>
-    store.getters['gui/presets/getPresetsFromHeater']({ name: props.objectName }) ?? []
-)
 
 const command = computed(() => {
     if (props.objectName.startsWith('temperature_fan')) return 'SET_TEMPERATURE_FAN_TARGET'
