@@ -471,6 +471,11 @@
     background: transparent;
 }
 
+.machine-configfiles-panel__tool-btn :deep(.v-icon) {
+    color: #fff;
+    opacity: 1;
+}
+
 .machine-configfiles-panel__settings-icon {
     margin: 0;
 }
@@ -753,15 +758,6 @@ const toolbarButtons = computed(() => [
         onlyWriteable: false,
         condition: true,
         click: refreshFileList,
-    },
-    {
-        text: t('Machine.ConfigFilesPanel.SortByType'),
-        color: machineButtonCol.value,
-        icon: sortBy.value === 'filetype' ? (sortDesc.value ? mdiSortDescending : mdiSortAscending) : mdiSortVariant,
-        loadingName: null,
-        onlyWriteable: false,
-        condition: true,
-        click: () => toggleSort('filetype'),
     },
 ].filter((rule) => rule.condition))
 

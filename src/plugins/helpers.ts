@@ -3,6 +3,7 @@ import { PrinterStateMacroParams } from '@/store/printer/types'
 import {
     mdiAlertOutline,
     mdiBackupRestore,
+    mdiCamera,
     mdiCheckboxMarkedCircleOutline,
     mdiCloseCircleOutline,
     mdiCodeJson,
@@ -623,6 +624,7 @@ const imageExtensions = new Set(['png', 'jpg', 'jpeg', 'gif', 'svg', 'bmp', 'web
 
 const typeLabels: Record<string, string> = {
     '01-config': 'config',
+    '02-webcam': 'webcam',
     '02-python': 'python',
     '03-json': 'json',
     '04-yaml': 'yaml',
@@ -639,9 +641,21 @@ function hasBackupDate(filename: string): boolean {
     return backupDatePattern.test(filename)
 }
 
+function isWebcamFile(filename: string): boolean {
+    const lower = filename.toLowerCase()
+    const ext = lower.split('.').pop() ?? ''
+    return (lower.includes('webcam') && ['conf', 'txt'].includes(ext)) || lower === 'crowsnest.conf'
+}
+
+function isPrinterConfig(filename: string): boolean {
+    return filename.toLowerCase().includes('printer')
+}
+
 export function getFileIcon(filename: string): string {
     const ext = filename.split('.').pop()?.toLowerCase() ?? ''
     if (hasBackupDate(filename)) return mdiBackupRestore
+    if (isWebcamFile(filename)) return mdiCamera
+    if (isPrinterConfig(filename)) return mdiTune
     if (imageExtensions.has(ext)) return mdiFileImage
     return extensionIconMap[ext] ?? mdiFileOutline
 }
@@ -663,6 +677,8 @@ const extensionColorMap: Record<string, string> = {
 
 export function getFileColor(filename: string): string | undefined {
     if (hasBackupDate(filename)) return 'brown'
+    if (isWebcamFile(filename)) return 'cyan'
+    if (isPrinterConfig(filename)) return 'orange'
     const ext = filename.split('.').pop()?.toLowerCase() ?? ''
     if (imageExtensions.has(ext)) return 'purple'
     return extensionColorMap[ext]
@@ -685,6 +701,8 @@ const typePriority: Record<string, string> = {
 
 export function getFileType(filename: string): string {
     if (hasBackupDate(filename)) return '08-backup'
+    if (isWebcamFile(filename)) return '02-webcam'
+    if (isPrinterConfig(filename)) return '01-config'
     const ext = filename.split('.').pop()?.toLowerCase() ?? ''
     if (imageExtensions.has(ext)) return '09-image'
     return typePriority[ext] ?? '99-other'
@@ -696,6 +714,9 @@ export function getFileTypeLabel(filename: string): string {
 
 export function typeSortValue(filename: string): string {
     const ext = filename.split('.').pop()?.toLowerCase() ?? ''
-    const priority = hasBackupDate(filename) ? '08-backup' : (typePriority[ext] ?? '99-other')
+    let priority = typePriority[ext] ?? '99-other'
+    if (hasBackupDate(filename)) priority = '08-backup'
+    else if (isWebcamFile(filename)) priority = '02-webcam'
+    else if (isPrinterConfig(filename)) priority = '01-config'
     return priority + '-' + filename.toLowerCase()
 }
