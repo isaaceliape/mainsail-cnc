@@ -201,6 +201,7 @@ import { useBase } from '@/composables/useBase'
 import { useControl } from '@/composables/useControl'
 import { useSocket } from '@/composables/useSocket'
 import Panel from '@/components/ui/Panel.vue'
+import { buildJogScript, isEditableTarget } from '@/components/panels/Cnc/jogKeyboard'
 import {
     mdiGamepad,
     mdiHome,
@@ -299,7 +300,7 @@ function jog(axis: string, distance: number) {
     lastJogTimestamps[key] = now
 
     const feedrate = getAxisFeedrate(axis)
-    const script = `SAVE_GCODE_STATE NAME=_ui_movement\nG91\nG1 ${axis}${distance} F${feedrate * 60}\nRESTORE_GCODE_STATE NAME=_ui_movement`
+    const script = buildJogScript(axis, distance, feedrate)
     socket.emit('printer.gcode.script', { script })
 }
 
@@ -323,15 +324,7 @@ function getAxisFeedrate(axis: string): number {
 function handleKeyboardJog(event: KeyboardEvent) {
     if (!keyboardNavEnabled.value || ['printing'].includes(printer_state.value)) return
 
-    const target = event.target as HTMLElement
-    const tagName = target?.tagName?.toUpperCase()
-    const isEditableTarget =
-        target?.isContentEditable ||
-        tagName === 'INPUT' ||
-        tagName === 'TEXTAREA' ||
-        tagName === 'SELECT'
-
-    if (isEditableTarget) return
+    if (isEditableTarget(event.target)) return
 
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
         event.preventDefault()

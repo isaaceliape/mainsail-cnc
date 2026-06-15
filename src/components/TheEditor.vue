@@ -51,7 +51,6 @@
                 <v-card-text class="pa-0 d-flex">
                     <codemirror-async
                         v-if="show"
-                        ref="editor"
                         v-model="sourcecode"
                         :name="filename"
                         :file-extension="fileExtension"
@@ -68,11 +67,10 @@
                             :items="configFileStructure"
                             class="w-100"
                             @update:active="activeChanges">
-                            <template #label="{ item }">
+                            <template #title="{ item }">
                                 <div
                                     class="cursor-pointer _structure-sidebar-item"
-                                    :class="item.type == 'item' ? 'ͼp' : 'ͼt'"
-                                    @click="activeChangesItemClick">
+                                    @click="activeChangesItemClick(item)">
                                     {{ item.name }}
                                 </div>
                             </template>
@@ -160,7 +158,7 @@ import { useI18n } from 'vue-i18n'
 import { useBase } from '@/composables/useBase'
 import { capitalize, formatFilesize, windowBeforeUnloadFunction } from '@/plugins/helpers'
 import { klipperRepos } from '@/store/variables'
-import CodemirrorAsync from '@/components/inputs/CodemirrorAsync'
+import CodemirrorAsync from '@/components/inputs/CodemirrorAsync.vue'
 import {
     mdiClose,
     mdiCloseThick,
@@ -185,10 +183,6 @@ const dialogDevices = ref(false)
 const treeviewItemKeyProp = 'line' as const
 const structureActive = ref<number[]>([])
 const structureOpen = ref<number[]>([])
-const structureActiveChangedBySidebar = ref(false)
-
-const editor = ref<any>(null)
-
 const changed = computed(() => store.state.editor.changed ?? false)
 const changedOutput = computed(() => changed.value ? '*' : '')
 const show = computed(() => store.state.editor.bool ?? false)
@@ -325,15 +319,23 @@ function save(restartServiceName: string | null = null) {
     })
 }
 
-function activeChangesItemClick() {
-    structureActiveChangedBySidebar.value = true
+function activeChangesItemClick(item: ConfigFileSection) {
+    structureActive.value = [item.line]
+    const cmEl = document.querySelector('.vue-codemirror')
+    if (!cmEl) return
+    const cmVm = (cmEl as any).__vueParentComponent
+    if (!cmVm?.setupState?.gotoLine) return
+    cmVm.setupState.gotoLine(item.line)
 }
 
 function activeChanges(activeItems: Array<ConfigFileSection[typeof treeviewItemKeyProp]>) {
-    if (!structureActiveChangedBySidebar.value) return
-    structureActiveChangedBySidebar.value = false
     if (!activeItems.length) return
-    editor.value?.gotoLine(activeItems[0])
+    const line = activeItems[0]
+    const cmEl = document.querySelector('.vue-codemirror')
+    if (!cmEl) return
+    const cmVm = (cmEl as any).__vueParentComponent
+    if (!cmVm?.setupState?.gotoLine) return
+    cmVm.setupState.gotoLine(line)
 }
 
 function lineChanges(line: number) {
@@ -425,7 +427,4 @@ watch(changed, (newVal: boolean) => {
     white-space: nowrap;
 }
 
-:deep(.v-treeview-node__level) + .v-treeview-node__level {
-    width: 12px;
-}
 </style>

@@ -35,7 +35,7 @@
         </template>
         <div class="offset-preview-container">
             <div class="offset-preview-layout">
-                <div class="offset-preview-layout__preview">
+                <div class="offset-preview-layout__preview" :style="previewCursorStyle">
                     <svg
                         ref="svgEl"
                         :viewBox="`0 0 ${svgWidth} ${svgHeight}`"
@@ -137,6 +137,42 @@
                             </text>
                         </g>
 
+                        <!-- Cursor crosshair -->
+                        <template v-if="cursorInfo">
+                            <line
+                                :x1="padding"
+                                :y1="toSvgY(cursorInfo.y)"
+                                :x2="Math.max(padding, toSvgX(cursorInfo.x - gridStep) )"
+                                :y2="toSvgY(cursorInfo.y)"
+                                stroke="rgba(255,255,255,0.45)"
+                                stroke-width="1"
+                                stroke-dasharray="3 3" />
+                            <line
+                                :x1="Math.min(padding + plotWidth, toSvgX(cursorInfo.x + gridStep))"
+                                :y1="toSvgY(cursorInfo.y)"
+                                :x2="padding + plotWidth"
+                                :y2="toSvgY(cursorInfo.y)"
+                                stroke="rgba(255,255,255,0.45)"
+                                stroke-width="1"
+                                stroke-dasharray="3 3" />
+                            <line
+                                :x1="toSvgX(cursorInfo.x)"
+                                :y1="padding"
+                                :x2="toSvgX(cursorInfo.x)"
+                                :y2="Math.max(padding, toSvgY(cursorInfo.y + gridStep))"
+                                stroke="rgba(255,255,255,0.45)"
+                                stroke-width="1"
+                                stroke-dasharray="3 3" />
+                            <line
+                                :x1="toSvgX(cursorInfo.x)"
+                                :y1="Math.min(padding + plotHeight, toSvgY(cursorInfo.y - gridStep))"
+                                :x2="toSvgX(cursorInfo.x)"
+                                :y2="padding + plotHeight"
+                                stroke="rgba(255,255,255,0.45)"
+                                stroke-width="1"
+                                stroke-dasharray="3 3" />
+                        </template>
+
                         <!-- Snap crosshair indicator -->
                         <template v-if="snapToGrid && snapInfo">
                             <line
@@ -165,14 +201,15 @@
                         </template>
 
                         <!-- Tool position dot -->
-                        <circle
-                            v-if="toolVisible"
-                            :cx="toSvgX(toolX)"
-                            :cy="toSvgY(toolY)"
-                            r="4"
-                            fill="#ff5000"
-                            stroke="white"
-                            stroke-width="1.5" />
+                        <g v-if="toolVisible">
+                            <circle
+                                :cx="toSvgX(toolX)"
+                                :cy="toSvgY(toolY)"
+                                r="4"
+                                fill="#ff5000"
+                                stroke="white"
+                                stroke-width="1.5" />
+                        </g>
 
                         <!-- Axis labels -->
                         <text
@@ -528,6 +565,7 @@ import ConfirmationDialog from '@/components/dialogs/ConfirmationDialog.vue'
 import { useCncOffsets, offsetNames } from '@/composables/useCncOffsets'
 import { setCncZero } from '@/store/files/cncApi'
 import { getSocket } from '@/store/runtime'
+import { getCursorTooltipPosition, previewCursorStyle } from '@/components/panels/Cnc/wcsPreview'
 
 const toast = useToast()
 const { klipperReadyForGui } = useBase()
@@ -911,8 +949,9 @@ function onSvgMouseMove(e: MouseEvent) {
 
     cursorInfo.value = { x: clampedX, y: clampedY }
 
-    tooltipLeft.value = e.clientX + 12
-    tooltipTop.value = e.clientY - 10
+    const tooltip = getCursorTooltipPosition(e.clientX, e.clientY)
+    tooltipLeft.value = tooltip.left
+    tooltipTop.value = tooltip.top
 }
 
 function onSvgMouseLeave() {
@@ -951,6 +990,7 @@ onMounted(() => {
 .offset-preview-layout__preview {
     width: 100%;
     max-width: 320px;
+    cursor: none;
 }
 
 .offset-preview-layout__details {
@@ -988,6 +1028,7 @@ onMounted(() => {
     width: 100%;
     height: auto;
     display: block;
+    cursor: none;
 }
 
 .offset-rect-group:hover rect {

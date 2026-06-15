@@ -26,6 +26,7 @@ import { indentUnit } from '@codemirror/language'
 const props = defineProps<{
     code?: string
     value?: string
+    modelValue?: string
     name?: string
     fileExtension?: string
 }>()
@@ -34,6 +35,7 @@ const emit = defineEmits<{
     (e: 'ready', cm: EditorView): void
     (e: 'lineChange', line: number): void
     (e: 'input', content: string): void
+    (e: 'update:modelValue', content: string): void
 }>()
 
 const store = useStore()
@@ -46,7 +48,7 @@ let content = ''
 let codemirror: null | EditorView = null
 let cminstance: null | EditorView = null
 
-watch(() => props.value, (newVal) => {
+watch(() => props.modelValue ?? props.value, (newVal) => {
     const cm_value = cminstance?.state?.doc.toString()
     if (newVal !== cm_value) {
         setCmValue(newVal ?? '')
@@ -72,14 +74,14 @@ function initialize() {
     cminstance = codemirror
 
     nextTick(() => {
-        setCmValue(props.code || props.value || content || '')
+        setCmValue(props.modelValue ?? props.code ?? props.value ?? content ?? '')
 
         emit('ready', codemirror)
     })
 }
 
 function setCmValue(content: string) {
-    cminstance?.setState(EditorState.create({ doc: content, extensions: cmExtensions }))
+    cminstance?.setState(EditorState.create({ doc: content, extensions: cmExtensions.value }))
 }
 
 const cmExtensions = computed(() => {
@@ -100,6 +102,7 @@ const cmExtensions = computed(() => {
             content = update.state?.doc.toString()
             if (content) {
                 emit('input', content)
+                emit('update:modelValue', content)
             }
         }),
     ]
@@ -121,13 +124,15 @@ const tabSize = computed(() => store.state.gui.editor?.tabSize || 2)
 
 const vscodeTheme = computed(() => (themeMode.value === 'dark' ? vscodeDark : vscodeLight))
 
+defineExpose({ gotoLine })
+
 function gotoLine(line: number) {
     const l = cminstance?.state?.doc.line(line)
     if (!l) return
 
     cminstance?.dispatch({
         selection: { head: l.from, anchor: l.to },
-        scrollIntoView: true,
+        effects: EditorView.scrollIntoView(l.from, { y: 'center' }),
     })
 }
 </script>
