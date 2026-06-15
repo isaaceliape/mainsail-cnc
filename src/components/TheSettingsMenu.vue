@@ -13,8 +13,7 @@
                 :title="$t('Settings.InterfaceSettings')"
                 :icon="mdiCogs"
                 card-class="settings-menu-dialog"
-                :margin-bottom="false"
-                :height="isMobile ? 0 : 548">
+                :margin-bottom="false">
                 <template #buttons>
                     <v-btn :icon="mdiCloseThick" rounded="0" @click="closeSettingsMenu" />
                 </template>
@@ -32,7 +31,7 @@
                 </template>
                 <v-row class="flex-row flex-nowrap">
                     <v-col v-if="!isMobile" cols="auto" class="pr-0">
-                        <OverlayScrollbarsComponent ref="settingsTabsScroll" class="settings-tabs-bar height500">
+                        <OverlayScrollbarsComponent ref="settingsTabsScroll" class="settings-tabs-bar desktop-settings-scroll">
                             <v-tabs v-model="activeTab" direction="vertical">
                                 <v-tab
                                     v-for="(tab, index) of tabTitles"
@@ -49,7 +48,7 @@
                     <v-col :class="isMobile ? '' : 'pl-0'" style="min-width: 0;">
                         <OverlayScrollbarsComponent
                             ref="settingsScroll"
-                            :class="'settings-tabs ' + (isMobile ? '' : 'height500')"
+                            :class="'settings-tabs ' + (isMobile ? '' : 'desktop-settings-scroll')"
                             :options="{ overflowBehavior: { x: 'hidden' } }">
                             <component :is="tabComponents[activeTab]" @scrollToTop="scrollToTop" />
                         </OverlayScrollbarsComponent>
@@ -287,9 +286,8 @@ html.theme--light .settings-tabs-bar {
     border-right: 1px solid rgba(0, 0, 0, 0.12);
 }
 
-.settings-tabs.height500 {
-    height: 500px;
-    max-height: calc(var(--app-height) - 111px);
+.desktop-settings-scroll {
+    height: clamp(320px, calc(var(--app-height) - 215px), 476px);
 }
 </style>
 

@@ -52,20 +52,16 @@
                     </v-card-title>
                     <v-divider class="ml-3"></v-divider>
                 </div>
-                <settings-row :title="$t('Settings.ConsoleTab.HideTemperatures').toString()" :dynamic-slot-width="true">
-                    <v-switch v-model="hideWaitTemperatures" hide-details class="mt-0"></v-switch>
-                </settings-row>
                 <template v-if="moonrakerComponents.includes('timelapse')">
-                    <v-divider class="my-2"></v-divider>
                     <settings-row
                         :title="$t('Settings.ConsoleTab.HideTimelapse').toString()"
                         :dynamic-slot-width="true">
                         <v-switch v-model="hideTimelapse" hide-details class="mt-0"></v-switch>
                     </settings-row>
+                    <v-divider class="my-2"></v-divider>
                 </template>
-                <v-divider class="my-2"></v-divider>
                 <div v-for="(filter, index) in consoleFilters" :key="index">
-                    <v-divider v-if="index" class="my-2"></v-divider>
+                    <v-divider v-if="index || moonrakerComponents.includes('timelapse')" class="my-2"></v-divider>
                     <settings-row :title="filter.name">
  <v-btn
                             size="small"
@@ -240,13 +236,6 @@ function updateConsoleHeight(newVal: number) {
         consoleHeight.value = newVal
     }, 500)
 }
-
-const hideWaitTemperatures = computed({
-    get: () => store.state.gui.console.hideWaitTemperatures,
-    set: (newVal) => {
-        store.dispatch('gui/console/saveSetting', { name: 'hideWaitTemperatures', value: newVal })
-    },
-})
 
 const hideTimelapse = computed({
     get: () => store.state.gui.console.hideTlCommands,

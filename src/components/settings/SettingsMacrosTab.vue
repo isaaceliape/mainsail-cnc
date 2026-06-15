@@ -19,9 +19,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useStore } from 'vuex'
 import { useI18n } from 'vue-i18n'
+import { useRoute, useRouter } from 'vue-router'
 import SettingsRow from '@/components/settings/SettingsRow.vue'
 import SettingsMacrosTabSimple from '@/components/settings/SettingsMacrosTabSimple.vue'
 import SettingsMacrosTabExpert from '@/components/settings/SettingsMacrosTabExpert.vue'
@@ -32,8 +33,11 @@ const emit = defineEmits<{
 
 const store = useStore()
 const { t } = useI18n()
+const route = useRoute()
+const router = useRouter()
 
 const showGeneral = ref(true)
+const macrosModeQueryKey = 'macrosMode'
 
 const modes = computed(() => [
     {
@@ -51,6 +55,40 @@ const mode = computed({
     set: (newVal) => {
         store.dispatch('gui/macros/saveSetting', { name: 'mode', value: newVal })
     },
+})
+
+function getMacrosModeFromQuery(): string | null {
+    const queryValue = route.query[macrosModeQueryKey]
+    const value = Array.isArray(queryValue) ? queryValue[0] : queryValue
+
+    if (value !== 'simple' && value !== 'expert') return null
+
+    return value
+}
+
+async function updateMacrosModeQuery(nextMode: string | null): Promise<void> {
+    const currentQueryMode = getMacrosModeFromQuery()
+    if (nextMode === currentQueryMode) return
+
+    const query = { ...route.query }
+
+    if (nextMode) query[macrosModeQueryKey] = nextMode
+    else delete query[macrosModeQueryKey]
+
+    await router.replace({ path: route.path, query, hash: route.hash })
+}
+
+watch(
+    () => route.query[macrosModeQueryKey],
+    () => {
+        const queryMode = getMacrosModeFromQuery()
+        if (queryMode && mode.value !== queryMode) mode.value = queryMode
+    },
+    { immediate: true }
+)
+
+watch(mode, async (nextMode) => {
+    await updateMacrosModeQuery(nextMode)
 })
 
 function updateShowGeneral(newVal: boolean) {

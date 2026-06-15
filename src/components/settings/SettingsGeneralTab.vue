@@ -25,20 +25,6 @@
                 </settings-row>
                 <v-divider class="my-2" />
                 <settings-row
-                    :title="$t('Settings.GeneralTab.CalcEstimateTime')"
-                    :sub-title="$t('Settings.GeneralTab.CalcEstimateTimeDescription')">
-                    <v-select
-                        v-model="calcEstimateTime"
-                        :items="calcEstimateItems"
-                        item-title="text"
-                        item-value="value"
-                        multiple
-                        hide-details
-                        density="compact"
-                        variant="outlined" />
-                </settings-row>
-                <v-divider class="my-2" />
-                <settings-row
                     :title="$t('Settings.GeneralTab.CalcEtaTime')"
                     :sub-title="$t('Settings.GeneralTab.CalcEtaTimeDescription')">
                     <v-select v-model="calcEtaTime" :items="calcEtaTimeItems" item-title="text" item-value="value" multiple hide-details density="compact" variant="outlined" />
@@ -58,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useStore } from 'vuex'
 import { useI18n } from 'vue-i18n'
 import { useBase } from '@/composables/useBase'
@@ -181,42 +167,62 @@ const timeFormatItems = computed(() => {
     ]
 })
 
+const allowedCalcPrintProgressValues = ['file-relative', 'file-absolute', 'slicer'] as const
+const allowedCalcEstimateValues = ['file'] as const
+const allowedCalcEtaValues = ['file', 'slicer'] as const
+
 const calcPrintProgressItems = computed(() => [
     { value: 'file-relative', text: t('Settings.GeneralTab.CalcPrintProgressItems.FileRelative') },
     { value: 'file-absolute', text: t('Settings.GeneralTab.CalcPrintProgressItems.FileAbsolute') },
     { value: 'slicer', text: t('Settings.GeneralTab.CalcPrintProgressItems.Slicer') },
-    { value: 'filament', text: t('Settings.GeneralTab.CalcPrintProgressItems.Filament') },
 ])
 
 const calcPrintProgress = computed({
-    get: () => store.state.gui.general.calcPrintProgress ?? 'file-relative',
+    get: () =>
+        allowedCalcPrintProgressValues.includes(store.state.gui.general.calcPrintProgress)
+            ? store.state.gui.general.calcPrintProgress
+            : 'file-relative',
     set: (newVal) => {
         store.dispatch('gui/saveSetting', { name: 'general.calcPrintProgress', value: newVal })
     },
 })
 
-const calcEstimateItems = computed(() => [
-    { value: 'file', text: t('Settings.GeneralTab.EstimateValues.File') },
-    { value: 'filament', text: t('Settings.GeneralTab.EstimateValues.Filament') },
-])
-
-const calcEstimateTime = computed({
-    get: () => store.state.gui.general.calcEstimateTime,
-    set: (newVal) => {
-        store.dispatch('gui/saveSetting', { name: 'general.calcEstimateTime', value: newVal })
-    },
-})
-
 const calcEtaTimeItems = computed(() => [
     { value: 'file', text: t('Settings.GeneralTab.EstimateValues.File') },
-    { value: 'filament', text: t('Settings.GeneralTab.EstimateValues.Filament') },
     { value: 'slicer', text: t('Settings.GeneralTab.EstimateValues.Slicer') },
 ])
 
 const calcEtaTime = computed({
-    get: () => store.state.gui.general.calcEtaTime,
+    get: () =>
+        (store.state.gui.general.calcEtaTime ?? []).filter((value: string) =>
+            allowedCalcEtaValues.includes(value as (typeof allowedCalcEtaValues)[number])
+        ),
     set: (newVal) => {
         store.dispatch('gui/saveSetting', { name: 'general.calcEtaTime', value: newVal })
     },
 })
+
+watch(
+    () => store.state.gui.general.calcPrintProgress,
+    (value) => {
+        if (!allowedCalcPrintProgressValues.includes(value)) {
+            store.dispatch('gui/saveSetting', { name: 'general.calcPrintProgress', value: 'file-relative' })
+        }
+    },
+    { immediate: true }
+)
+
+watch(
+    () => store.state.gui.general.calcEtaTime,
+    (value) => {
+        const normalized = (value ?? []).filter((item: string) =>
+            allowedCalcEtaValues.includes(item as (typeof allowedCalcEtaValues)[number])
+        )
+
+        if (JSON.stringify(value ?? []) !== JSON.stringify(normalized)) {
+            store.dispatch('gui/saveSetting', { name: 'general.calcEtaTime', value: normalized })
+        }
+    },
+    { immediate: true }
+)
 </script>

@@ -1,17 +1,19 @@
 <template>
     <v-card flat>
         <v-card-text>
-            <v-row>
-                <v-col class="v-col-12 v-col-md-4 d-flex">
+            <div class="dashboard-widescreen-layout">
+                <div class="dashboard-widescreen-layout__primary d-flex">
                     <settings-dashboard-sortable viewport-name="widescreen" :column="1" />
-                </v-col>
-                <v-col class="v-col-12 v-col-md-4 d-flex">
-                    <settings-dashboard-sortable viewport-name="widescreen" :column="2" />
-                </v-col>
-                <v-col class="v-col-12 v-col-md-4 d-flex">
-                    <settings-dashboard-sortable viewport-name="widescreen" :column="3" />
-                </v-col>
-            </v-row>
+                </div>
+                <div class="dashboard-widescreen-layout__secondary">
+                    <div class="dashboard-widescreen-layout__stack-item d-flex">
+                        <settings-dashboard-sortable viewport-name="widescreen" :column="2" />
+                    </div>
+                    <div class="dashboard-widescreen-layout__stack-item d-flex">
+                        <settings-dashboard-sortable viewport-name="widescreen" :column="3" />
+                    </div>
+                </div>
+            </div>
             <v-row>
                 <v-col class="text-center">
  <v-btn color="error" @click="resetLayout">{{ $t('Settings.DashboardTab.ResetLayout') }}</v-btn>
@@ -34,4 +36,21 @@ function resetLayout() {
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+.dashboard-widescreen-layout {
+    display: grid;
+    gap: 16px;
+}
+
+.dashboard-widescreen-layout__secondary {
+    display: grid;
+    gap: 16px;
+}
+
+@media (min-width: 960px) {
+    .dashboard-widescreen-layout {
+        grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+        align-items: start;
+    }
+}
+</style>

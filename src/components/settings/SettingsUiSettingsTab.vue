@@ -11,7 +11,7 @@
                 <settings-row
                     :title="$t('Settings.UiSettingsTab.Theme')"
                     :sub-title="$t('Settings.UiSettingsTab.ThemeDescription')">
-                    <v-select v-model="themeName" :items="themes" item-title="text" item-value="value" class="mt-0" hide-details variant="outlined" density="compact" />
+                    <v-select v-model="themeName" :items="themesList" item-value="value" class="mt-0" hide-details variant="outlined" density="compact" />
                 </settings-row>
                 <v-divider class="my-2" />
                 <settings-row :title="$t('Settings.UiSettingsTab.Logo')">
@@ -249,18 +249,6 @@
                 </settings-row>
                 <v-divider class="my-2" />
                 <settings-row
-                    :title="$t('Settings.UiSettingsTab.TempchartHeight')"
-                    :sub-title="$t('Settings.UiSettingsTab.TempchartHeightDescription')">
-                    <v-slider
-                        v-model.lazy="tempchartHeight"
-                        hide-details
-                        :min="100"
-                        :max="500"
-                        :step="1"
-                        :label="tempchartHeight + 'px'" />
-                </settings-row>
-                <v-divider class="my-2" />
-                <settings-row
                     :title="$t('Settings.UiSettingsTab.HideUpdateWarnings')"
                     :sub-title="$t('Settings.UiSettingsTab.HideUpdateWarningsDescription')"
                     :dynamic-slot-width="true">
@@ -374,7 +362,7 @@ const modes = computed(() => [
 const themesList = computed(() => {
     return themes.map((theme) => {
         return {
-            text: theme.displayName,
+            title: theme.displayName,
             value: theme.name,
         }
     })
@@ -567,13 +555,6 @@ const printstatusThumbnailZoom = computed({
     get: () => store.state.gui.uiSettings.printstatusThumbnailZoom ?? true,
     set: (newVal) => {
         store.dispatch('gui/saveSetting', { name: 'uiSettings.printstatusThumbnailZoom', value: newVal })
-    },
-})
-
-const tempchartHeight = computed({
-    get: () => store.state.gui.uiSettings.tempchartHeight ?? 250,
-    set: (newVal) => {
-        store.dispatch('gui/saveSetting', { name: 'uiSettings.tempchartHeight', value: newVal })
     },
 })
 

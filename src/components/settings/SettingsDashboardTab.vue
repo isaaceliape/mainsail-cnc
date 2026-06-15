@@ -46,7 +46,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useBase } from '@/composables/useBase'
 import SettingsDashboardTabMobile from '@/components/settings/Dashboard/Mobile.vue'
 import SettingsDashboardTabTablet from '@/components/settings/Dashboard/Tablet.vue'
@@ -55,8 +56,11 @@ import SettingsDashboardTabWidescreen from '@/components/settings/Dashboard/Wide
 import { mdiCellphone, mdiMonitorScreenshot, mdiMonitorDashboard, mdiTablet } from '@mdi/js'
 
 const { isMobile, isTablet, isDesktop, isWidescreen } = useBase()
+const route = useRoute()
+const router = useRouter()
 
 const currentViewport = ref('desktop')
+const dashboardViewportQueryKey = 'dashboardViewport'
 
 const viewportComponents: Record<string, any> = {
     mobile: SettingsDashboardTabMobile,
@@ -65,7 +69,36 @@ const viewportComponents: Record<string, any> = {
     widescreen: SettingsDashboardTabWidescreen,
 }
 
+function getDashboardViewportFromQuery(): string | null {
+    const queryValue = route.query[dashboardViewportQueryKey]
+    const value = Array.isArray(queryValue) ? queryValue[0] : queryValue
+
+    if (typeof value !== 'string') return null
+    if (!(value in viewportComponents)) return null
+
+    return value
+}
+
+async function updateDashboardViewportQuery(viewport: string | null): Promise<void> {
+    const currentQueryViewport = getDashboardViewportFromQuery()
+    if (viewport === currentQueryViewport) return
+
+    const query = { ...route.query }
+
+    if (viewport) query[dashboardViewportQueryKey] = viewport
+    else delete query[dashboardViewportQueryKey]
+
+    await router.replace({ path: route.path, query, hash: route.hash })
+}
+
 onMounted(() => {
+    const queryViewport = getDashboardViewportFromQuery()
+
+    if (queryViewport) {
+        currentViewport.value = queryViewport
+        return
+    }
+
     if (isMobile.value) currentViewport.value = 'mobile'
     else if (isTablet.value) currentViewport.value = 'tablet'
     else if (isDesktop.value) currentViewport.value = 'desktop'
@@ -74,4 +107,16 @@ onMounted(() => {
 })
 
 const currentTab = computed(() => viewportComponents[currentViewport.value] ?? SettingsDashboardTabDesktop)
+
+watch(
+    () => route.query[dashboardViewportQueryKey],
+    () => {
+        const queryViewport = getDashboardViewportFromQuery()
+        if (queryViewport && currentViewport.value !== queryViewport) currentViewport.value = queryViewport
+    }
+)
+
+watch(currentViewport, async () => {
+    await updateDashboardViewportQuery(currentViewport.value)
+})
 </script>
