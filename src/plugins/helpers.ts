@@ -2,6 +2,7 @@ import type { FileStateFile } from '@/store/files/types'
 import { PrinterStateMacroParams } from '@/store/printer/types'
 import {
     mdiAlertOutline,
+    mdiBackupRestore,
     mdiCheckboxMarkedCircleOutline,
     mdiCloseCircleOutline,
     mdiCodeJson,
@@ -613,6 +614,8 @@ const extensionIconMap: Record<string, string> = {
     sh: mdiConsoleLine,
     md: mdiLanguageMarkdown,
     txt: mdiFileDocumentOutline,
+    bak: mdiBackupRestore,
+    bkp: mdiBackupRestore,
 }
 
 const imageExtensions = new Set(['png', 'jpg', 'jpeg', 'gif', 'svg', 'bmp', 'webp', 'tif', 'tiff'])
@@ -633,6 +636,8 @@ const extensionColorMap: Record<string, string> = {
     sh: 'green',
     md: 'blue-grey',
     txt: 'grey',
+    bak: 'brown',
+    bkp: 'brown',
 }
 
 export function getFileColor(filename: string): string | undefined {
