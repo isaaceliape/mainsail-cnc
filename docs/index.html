@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mainsail-CNC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-card: #1c2333;
+      --text-primary: #e6edf3;
+      --text-secondary: #8b949e;
+      --accent: #ff6b35;
+      --accent-hover: #ff8555;
+      --border: #30363d;
+      --success: #3fb950;
+      --warning: #d29922;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+    h1, h2, h3, h4 { font-family: 'IBM Plex Mono', monospace; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-hover); text-decoration: underline; }
+    .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+
+    header {
+      padding: 64px 0 48px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+    header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    header .accent { color: var(--accent); }
+    header .subtitle {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      margin-top: 12px;
+      max-width: 640px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    header .links {
+      margin-top: 20px;
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    header .links a {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.875rem;
+      padding: 8px 20px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    header .links a:hover {
+      border-color: var(--accent);
+      text-decoration: none;
+    }
+
+    section {
+      padding: 48px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    section:last-of-type { border-bottom: none; }
+    section h2 {
+      font-size: 1.5rem;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      transition: border-color 0.2s;
+    }
+    .feature-card:hover { border-color: var(--accent); }
+    .feature-card h3 {
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+    }
+    .feature-card p {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+    .feature-card .badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-family: 'IBM Plex Mono', monospace;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(63, 185, 80, 0.15);
+      color: var(--success);
+      margin-top: 10px;
+    }
+
+    .arch-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .arch-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+    }
+    .arch-item h3 { font-size: 0.95rem; margin-bottom: 4px; }
+    .arch-item code {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--accent);
+    }
+    .arch-item p {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-top: 6px;
+    }
+
+    .feature-list {
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 10px;
+    }
+    .feature-list li {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .feature-list li::before {
+      content: ">";
+      color: var(--accent);
+      font-family: 'IBM Plex Mono', monospace;
+      font-weight: 700;
+    }
+
+    footer {
+      padding: 32px 0;
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+    footer a { color: var(--text-secondary); }
+    footer a:hover { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <h1><span class="accent">Mainsail</span>-CNC</h1>
+    <p class="subtitle">
+      A maintained fork of Mainsail &mdash; the popular web interface for Klipper-powered
+      3D printers &mdash; extended with native controls for CNC mills, routers, lasers,
+      and plasma cutters.
+    </p>
+    <div class="links">
+      <a href="https://github.com/isaaceliape/mainsail-cnc">GitHub</a>
+      <a href="https://docs.mainsail.xyz">Mainsail Docs</a>
+      <a href="https://isaaceliape.github.io/mainsail-cnc/architecture">Architecture</a>
+      <a href="https://isaaceliape.github.io/mainsail-cnc/api">API Reference</a>
+      <a href="https://isaaceliape.github.io/mainsail-cnc/installation">Installation</a>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="container">
+    <h2>CNC Dashboard</h2>
+    <p style="color:var(--text-secondary);margin-bottom:20px">
+      Six purpose-built panels replace the traditional 3D-printing dashboard. Each panel
+      is independently toggleable and layout-preserving across desktop, tablet, and
+      widescreen viewports.
+    </p>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <h3>CNC Status</h3>
+        <p>Printer state, active filename, feed override, requested feed, max velocity, host load, free RAM, and auto-loaded CAM metadata for the active file.</p>
+      </div>
+      <div class="feature-card">
+        <h3>DRO</h3>
+        <p>3-axis digital readout with machine position, work position, computed offset, axis limits, homed flags, G90/G91 mode indicator, and live velocity — all in monospace.</p>
+      </div>
+      <div class="feature-card">
+        <h3>Jog Panel</h3>
+        <p>Home All/XY/Z, XY directional pad, Z +/- buttons, step-size selector (1&ndash;100mm), configurable feedrates, disable steppers, keyboard navigation, and emergency stop (M112). Rate-limited at 50ms.</p>
+      </div>
+      <div class="feature-card">
+        <h3>WCS Offset Preview</h3>
+        <p>Interactive SVG-based work coordinate system manager. G54&ndash;G59 selection, per-WCS origin offsets, set X/Y/Z zero (with confirmation dialogs), manual entry, click-to-move, grid overlay, snap-to-grid, stock size visualization, and eye-toggle visibility.</p>
+      </div>
+      <div class="feature-card">
+        <h3>Spindle &amp; Coolant</h3>
+        <p>Spindle ON/OFF/CCW with RPM input (0&ndash;24000). Flood and mist coolant toggles. Safety confirmation dialogs gated by machine profile.</p>
+      </div>
+      <div class="feature-card">
+        <h3>MDI Console</h3>
+        <p>G-code manual data input with quick commands (G20/G21/G90/G91), WCS shortcut buttons (G54&ndash;G59), and full command history.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <h2>Key CNC Features</h2>
+    <ul class="feature-list">
+      <li>Machine coordinate system (G54&ndash;G59) with Klipper plugin</li>
+      <li>G10 L2/L20 work offset support via custom Klipper extra</li>
+      <li>WCS offsets survive Klipper restart (JSON persistence)</li>
+      <li>CAM metadata extraction (EstlCam, FreeCAD, Fusion 360, V-Carve)</li>
+      <li>CNC metadata display on G-code file cards (tool, spindle, feeds)</li>
+      <li>CNC Mode toggle in G-code viewer (wireframe rendering)</li>
+      <li>.nc file extension support in file browser</li>
+      <li>Moonraker CNC agent with dedicated <code>/server/cnc/*</code> API</li>
+      <li>Machine profile system (spindle, coolant, probe, safety rules)</li>
+      <li>Safety confirmations for spindle start and zero reset</li>
+      <li>Homing-before-offsets enforcement</li>
+      <li>MDI-renamed console (CNC terminology throughout)</li>
+      <li>Custom jog scripting (SAVE_GCODE_STATE/G91/G1/RESTORE)</li>
+      <li>6-axis offset preview with stock visualization</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <h2>Architecture</h2>
+    <div class="arch-list">
+      <div class="arch-item">
+        <h3>Frontend</h3>
+        <code>Vue 3.5 + Vuetify 3 + TypeScript + Pinia</code>
+        <p>Six CNC dashboard panels, WCS SVG preview, CAM metadata viewer, and cncMode-gated layouts. Built on the complete Mainsail Vue 3 migration.</p>
+      </div>
+      <div class="arch-item">
+        <h3>Backend &mdash; Moonraker CNC Agent</h3>
+        <code>Python &middot; moonraker-cnc-agent/</code>
+        <p>488-line Python component registering 12 endpoints under <code>/server/cnc/*</code> for spindle, coolant, WCS, jog, units, and settings management. Includes settings persistence and machine profile loading.</p>
+      </div>
+      <div class="arch-item">
+        <h3>Klipper Extra &mdash; Work Coordinate Systems</h3>
+        <code>Python &middot; klipper-extras/work_coordinate_systems.py</code>
+        <p>187-line Klipper plugin implementing G10 L2/L20, six offset tables (G54&ndash;G59), G53 machine-coordinate mode, <code>WCS_STATUS</code> command, <code>SAVE_WCS</code> command, and auto-load on Klipper startup.</p>
+      </div>
+      <div class="arch-item">
+        <h3>Klipper Macros</h3>
+        <code>G-code &middot; klipper-macros/</code>
+        <p>WCS selector macros (WCS_1&ndash;WCS_6), per-axis zeroing (ZERO_X/Y/Z/ALL), and scaffold macros for safe-Z retract and parking.</p>
+      </div>
+      <div class="arch-item">
+        <h3>CAM Metadata Extractor</h3>
+        <code>Python &middot; scripts/cnc_metadata_extractor.py</code>
+        <p>CLI tool that parses CAM-generated G-code from EstlCam, FreeCAD, Fusion 360 MPCNC, and V-Carve, producing <code>.cnc-meta.json</code> sidecars with tool, spindle, feed, and operation data.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <h2>API Endpoints</h2>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <h3><code>GET /server/cnc/state</code></h3>
+        <p>Combined CNC state: spindle, coolant, units, WCS, profile, capabilities, safety rules, and settings.</p>
+      </div>
+      <div class="feature-card">
+        <h3><code>GET|POST /server/cnc/spindle</code></h3>
+        <p>Query or set spindle state (off/CW/CCW) and RPM. Maps to M3/M4/M5.</p>
+      </div>
+      <div class="feature-card">
+        <h3><code>GET|POST /server/cnc/coolant</code></h3>
+        <p>Query or toggle flood and mist coolant. Maps to M7/M8/M9.</p>
+      </div>
+      <div class="feature-card">
+        <h3><code>GET|POST /server/cnc/units</code></h3>
+        <p>Query or switch between G20 (inch) and G21 (mm).</p>
+      </div>
+      <div class="feature-card">
+        <h3><code>GET /server/cnc/wcs</code></h3>
+        <p>Active WCS + per-WCS offset list for G54&ndash;G59.</p>
+      </div>
+      <div class="feature-card">
+        <h3><code>POST /server/cnc/wcs/select</code></h3>
+        <p>Switch active work coordinate system. Maps to G54&ndash;G59.</p>
+      </div>
+      <div class="feature-card">
+        <h3><code>POST /server/cnc/wcs/set-zero</code></h3>
+        <p>Set work zero on specified axes. Uses G10 L20.</p>
+      </div>
+      <div class="feature-card">
+        <h3><code>POST /server/cnc/jog</code></h3>
+        <p>Distance-based jog command with rate limiting.</p>
+      </div>
+      <div class="feature-card">
+        <h3><code>GET|POST /server/cnc/settings</code></h3>
+        <p>Read and persist CNC dashboard settings to disk.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <h2>Installation</h2>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <h3>KIAUH / Manual Install</h3>
+        <p>Quick install via KIAUH or manual deployment. See the full <a href="https://isaaceliape.github.io/mainsail-cnc/installation">installation guide</a>.</p>
+        <span class="badge">Stable</span>
+      </div>
+      <div class="feature-card">
+        <h3>Moonraker Update Manager</h3>
+        <p>Automatic updates via Moonraker&rsquo;s update manager. Configure with the provided <code>update-manager.conf</code> example.</p>
+        <span class="badge">Stable</span>
+      </div>
+      <div class="feature-card">
+        <h3>Moonraker CNC Agent</h3>
+        <p>Install the CNC agent alongside Klipper extras and macros using the bundled <code>install_to_moonraker.sh</code> script.</p>
+        <span class="badge">Stable</span>
+      </div>
+      <div class="feature-card">
+        <h3>Deploy Script</h3>
+        <p>One-shot <code>deploy.sh</code> for quick frontend builds and deployment to an existing Mainsail installation.</p>
+        <span class="badge">Stable</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <h2>Upcoming</h2>
+    <ul class="feature-list">
+      <li>Safe-Z retract on jog</li>
+      <li>Spindle/coolant interlock</li>
+      <li>Jog limits configuration</li>
+      <li>Guarded WCS switching</li>
+      <li>Tool-change workflow support</li>
+      <li>Machine capability gating improvements</li>
+      <li>Probing and setup wizards</li>
+      <li>Job bounds and dry-run helpers</li>
+      <li>Surface probing (repurposed bed mesh)</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <p>Mainsail-CNC &mdash; a <a href="https://github.com/isaaceliape/mainsail-cnc">CNC-focused fork</a> of <a href="https://github.com/mainsail-crew/mainsail">Mainsail</a>.</p>
+    <p style="margin-top:4px;font-size:0.8rem">Built with Vue 3.5 &middot; Vuetify 3 &middot; Klipper &middot; Moonraker</p>
+  </div>
+</footer>
+
+</body>
+</html>
