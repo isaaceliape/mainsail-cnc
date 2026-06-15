@@ -79,11 +79,6 @@ const boolNaviTemp = computed((): boolean =>
 
 const sidebarCssVars = computed((): Record<string, string> => {
     const output: Record<string, string> = {}
-    if (!isMobile.value) {
-        output.top = `${topbarHeight}px !important`
-        output.height = `calc(100% - ${topbarHeight}px)`
-        output.maxHeight = `calc(100% - ${topbarHeight}px)`
-    }
     if (boolNaviTemp.value) output['padding-bottom'] = `${topbarHeight}px`
     return output
 })

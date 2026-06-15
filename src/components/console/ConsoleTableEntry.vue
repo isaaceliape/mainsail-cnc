@@ -68,7 +68,7 @@ function commandClick(event: Event) {
 }
 
 .consoleTableRow {
-    font-family: 'Roboto Mono', monospace;
+    font-family: '0xProto Nerd Font Mono', monospace;
     font-size: 0.95em;
     white-space: pre-wrap;
 

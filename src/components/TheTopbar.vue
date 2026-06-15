@@ -340,7 +340,7 @@ function emergencyStop() {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    font-family: '0xProto Nerd Font Mono', monospace;
     font-size: 0.8rem;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;

@@ -472,7 +472,7 @@ onBeforeUnmount(() => {
 }
 
 .gcode-card__size {
-    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-family: '0xProto Nerd Font Mono', monospace;
 }
 
 .gcode-card__sep {
@@ -523,7 +523,7 @@ onBeforeUnmount(() => {
 }
 
 .gcode-card__stat-value {
-    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-family: '0xProto Nerd Font Mono', monospace;
     font-size: 13px;
     color: rgba(255, 255, 255, 0.85);
 }

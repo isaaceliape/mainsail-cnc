@@ -321,14 +321,21 @@ function getAxisFeedrate(axis: string): number {
 }
 
 function handleKeyboardJog(event: KeyboardEvent) {
-    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
-        event.preventDefault()
-    }
-
     if (!keyboardNavEnabled.value || ['printing'].includes(printer_state.value)) return
 
     const target = event.target as HTMLElement
-    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') return
+    const tagName = target?.tagName?.toUpperCase()
+    const isEditableTarget =
+        target?.isContentEditable ||
+        tagName === 'INPUT' ||
+        tagName === 'TEXTAREA' ||
+        tagName === 'SELECT'
+
+    if (isEditableTarget) return
+
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+        event.preventDefault()
+    }
 
     const step = currentStep.value
     switch (event.key) {

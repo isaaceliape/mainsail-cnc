@@ -127,11 +127,11 @@
                             <text
                                 v-if="stockSizes[entry.name]"
                                 :x="toSvgX(entry.offsetX + stockSizes[entry.name].width / 2)"
-                                :y="toSvgY(entry.offsetY + stockSizes[entry.name].height / 2) + 3"
+                                :y="toSvgY(entry.offsetY + stockSizes[entry.name].height) - 4"
                                 text-anchor="middle"
                                 :fill="entry.color"
                                 font-size="7"
-                                font-family="monospace"
+                                font-family="0xProto Nerd Font Mono"
                                 opacity="0.7">
                                 {{ stockSizes[entry.name].name || entry.name }}
                             </text>
@@ -181,7 +181,7 @@
                             text-anchor="middle"
                             fill="rgba(255,255,255,0.5)"
                             font-size="9"
-                            font-family="monospace">
+                            font-family="0xProto Nerd Font Mono">
                             X ({{ machineMaxX.toFixed(0) }}mm)
                         </text>
                         <text
@@ -190,7 +190,7 @@
                             text-anchor="middle"
                             fill="rgba(255,255,255,0.5)"
                             font-size="9"
-                            font-family="monospace"
+                            font-family="0xProto Nerd Font Mono"
                             :transform="`rotate(-90, ${padding - 8}, ${padding + plotHeight / 2})`">
                             Y ({{ machineMaxY.toFixed(0) }}mm)
                         </text>
@@ -212,7 +212,16 @@
                                 <span class="offset-preview-legend__swatch" :style="{ backgroundColor: entry.color }" />
                                 <span class="offset-preview-legend__card-title">{{ entry.name }}</span>
                                 <span class="offset-preview-legend__card-origin">
-                                    ({{ entry.offsetX.toFixed(1) }}, {{ entry.offsetY.toFixed(1) }})
+                                    <span class="offset-preview-legend__card-axis" :style="{ color: entry.color }">x</span
+                                    ><span class="offset-preview-legend__card-number">{{ formatOffsetValue(entry.offsetX) }}</span>, <span
+                                        class="offset-preview-legend__card-axis"
+                                        :style="{ color: entry.color }"
+                                        >y</span
+                                    ><span class="offset-preview-legend__card-number">{{ formatOffsetValue(entry.offsetY) }}</span>, <span
+                                        class="offset-preview-legend__card-axis"
+                                        :style="{ color: entry.color }"
+                                        >z</span
+                                    ><span class="offset-preview-legend__card-number">{{ formatOffsetValue(entry.offsetZ) }}</span>
                                 </span>
                                 <v-icon
                                     size="x-small"
@@ -224,23 +233,34 @@
                                     @click.stop="toggleOffsetVisibility(entry.name)">
                                     {{ isOffsetVisible(entry.name) ? mdiEye : mdiEyeOff }}
                                 </v-icon>
+                                <v-btn
+                                    icon
+                                    variant="tonal"
+                                    color="primary"
+                                    size="x-small"
+                                    density="compact"
+                                    class="offset-preview-legend__card-edit"
+                                    :aria-label="`Edit stock size for ${entry.name}`"
+                                    @click.stop="openStockDialog(entry.name)">
+                                    <v-icon size="x-small">{{ mdiPencilPlusOutline }}</v-icon>
+                                </v-btn>
                             </div>
                             <div
                                 v-if="stockSizes[entry.name]"
-                                class="offset-preview-legend__card-stock"
-                                @click.stop="openStockDialog(entry.name)"
-                                style="cursor: pointer">
-                                <div class="offset-preview-legend__card-stock-name">
-                                    {{ stockSizes[entry.name].name || entry.name }}
-                                </div>
-                                <div class="offset-preview-legend__card-stock-dims">
-                                    <span>{{ stockSizes[entry.name].width }}W</span>
-                                    <span class="offset-preview-legend__card-sep">&times;</span>
-                                    <span>{{ stockSizes[entry.name].height }}H</span>
-                                    <template v-if="stockSizes[entry.name].depth">
+                                class="offset-preview-legend__card-stock">
+                                <div class="offset-preview-legend__card-stock-content">
+                                    <div class="offset-preview-legend__card-stock-name">
+                                        {{ stockSizes[entry.name].name || entry.name }}
+                                    </div>
+                                    <div class="offset-preview-legend__card-stock-dims">
+                                        <span>{{ stockSizes[entry.name].width }}W</span>
                                         <span class="offset-preview-legend__card-sep">&times;</span>
-                                        <span>{{ stockSizes[entry.name].depth }}D</span>
-                                    </template>
+                                        <span>{{ stockSizes[entry.name].height }}H</span>
+                                        <template v-if="stockSizes[entry.name].depth">
+                                            <span class="offset-preview-legend__card-sep">&times;</span>
+                                            <span>{{ stockSizes[entry.name].depth }}D</span>
+                                        </template>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -501,6 +521,7 @@ import {
     mdiEyeOff,
     mdiTarget,
     mdiAxisZArrow,
+    mdiPencilPlusOutline,
     mdiRestart,
 } from '@mdi/js'
 import ConfirmationDialog from '@/components/dialogs/ConfirmationDialog.vue'
@@ -686,6 +707,10 @@ function hexToRgba(hex: string, alpha: number): string {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
+function formatOffsetValue(value: number): string {
+    return Number.isInteger(value) ? String(value) : value.toFixed(1)
+}
+
 const machineMinX = computed(() => {
     const min = store.state.printer?.toolhead?.axis_minimum
     return Array.isArray(min) ? (min[0] ?? 0) : 0
@@ -741,6 +766,7 @@ interface OffsetEntry {
     color: string
     offsetX: number
     offsetY: number
+    offsetZ: number
     clippedMinX: number
     clippedMinY: number
     clippedMaxX: number
@@ -749,14 +775,16 @@ interface OffsetEntry {
 
 const allOffsetEntries = computed<OffsetEntry[]>(() => {
     return offsetNames.map((name, idx) => {
-        const off = wcsOffsets.value[name] ?? { X: 0, Y: 0 }
+        const off = wcsOffsets.value[name] ?? { X: 0, Y: 0, Z: 0 }
         const ox = off.X ?? 0
         const oy = off.Y ?? 0
+        const oz = off.Z ?? 0
         return {
             name,
             color: offsetColors[idx],
             offsetX: ox,
             offsetY: oy,
+            offsetZ: oz,
             clippedMinX: Math.max(ox, machineMinX.value),
             clippedMinY: Math.max(oy, machineMinY.value),
             clippedMaxX: Math.min(machineMaxX.value, machineMaxX.value),
@@ -1007,7 +1035,7 @@ onMounted(() => {
 
 .offset-preview-legend__coords {
     color: rgba(255, 255, 255, 0.45);
-    font-family: monospace;
+    font-family: '0xProto Nerd Font Mono', monospace;
     font-size: 10px;
 }
 
@@ -1156,14 +1184,30 @@ onMounted(() => {
 
 .offset-preview-legend__card-origin {
     color: rgba(255, 255, 255, 0.4);
-    font-family: monospace;
+    font-family: '0xProto Nerd Font Mono', monospace;
     font-size: 10px;
 }
 
+.offset-preview-legend__card-axis {
+    font-weight: 700;
+}
+
+.offset-preview-legend__card-number {
+    color: rgba(255, 255, 255, 0.92);
+}
+
 .offset-preview-legend__card-stock {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
     margin-top: 4px;
     padding-top: 4px;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.offset-preview-legend__card-stock-content {
+    min-width: 0;
 }
 
 .offset-preview-legend__card-stock-name {
@@ -1177,19 +1221,33 @@ onMounted(() => {
     align-items: center;
     gap: 2px;
     color: rgba(255, 255, 255, 0.45);
-    font-family: monospace;
+    font-family: '0xProto Nerd Font Mono', monospace;
     font-size: 10px;
+    flex-wrap: wrap;
 }
 
 .offset-preview-legend__card-sep {
     opacity: 0.4;
 }
 
+.offset-preview-legend__card-edit {
+    flex: 0 0 auto;
+    margin-left: 4px;
+    margin-top: -2px;
+    color: rgba(255, 255, 255, 0.75);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.offset-preview-legend__card-edit:hover {
+    color: rgb(var(--v-theme-primary));
+}
+
 .offset-preview-tooltip {
     position: fixed;
     background: rgba(0, 0, 0, 0.85);
     color: rgba(255, 255, 255, 0.9);
-    font-family: monospace;
+    font-family: '0xProto Nerd Font Mono', monospace;
     font-size: 10px;
     padding: 2px 6px;
     border-radius: 3px;

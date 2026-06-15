@@ -14,7 +14,7 @@
                 <text
                     x="47.429px"
                     y="60.749px"
-                    :style="'font-family:Roboto;font-size:16px;fill:rgb(' + colorMainsail + ');'">
+                    :style="'font-family: \'0xProto Nerd Font Mono\';font-size:16px;fill:rgb(' + colorMainsail + ');'">
                     Mainsail
                 </text>
             </g>
@@ -66,7 +66,7 @@
                 <text
                     x="45.429px"
                     y="60.749px"
-                    :style="'fill:rgb(' + colorMoonraker + ');font-family:Roboto;font-size:16px;'">
+                    :style="'fill:rgb(' + colorMoonraker + ');font-family: \'0xProto Nerd Font Mono\';font-size:16px;'">
                     Moonraker
                 </text>
             </g>
@@ -112,7 +112,7 @@
                 <text
                     x="48.429px"
                     y="60.749px"
-                    :style="'font-family:Roboto;font-size:16px;fill:rgb(' + colorKlipper + ');'">
+                    :style="'font-family: \'0xProto Nerd Font Mono\';font-size:16px;fill:rgb(' + colorKlipper + ');'">
                     Klipper
                 </text>
             </g>

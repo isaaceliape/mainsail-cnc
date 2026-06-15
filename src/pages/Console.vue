@@ -136,6 +136,6 @@ function scrollToBottom() {
 }
 
 .gcode-command-field {
-    font-family: 'Roboto Mono', monospace;
+    font-family: '0xProto Nerd Font Mono', monospace;
 }
 </style>

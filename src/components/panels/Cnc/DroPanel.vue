@@ -194,14 +194,14 @@ function formatSigned(value: number, digits: number) {
 }
 
 .dro-panel__value {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    font-family: '0xProto Nerd Font Mono', monospace;
     font-size: 1.45rem;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
 }
 
 .dro-panel__offset {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    font-family: '0xProto Nerd Font Mono', monospace;
     font-size: 1rem;
     font-variant-numeric: tabular-nums;
     opacity: 0.9;

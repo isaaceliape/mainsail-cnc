@@ -3,6 +3,16 @@ html {
     scrollbar-color: #6b6b6b #272727;
 }
 
+html,
+body,
+#app,
+.v-application,
+.v-overlay-container,
+.v-theme--dark,
+.v-theme--light {
+    font-family: '0xProto Nerd Font Mono', monospace !important;
+}
+
 body {
     background: #121212;
 }

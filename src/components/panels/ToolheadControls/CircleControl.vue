@@ -726,7 +726,7 @@ svg g#stepsZ,
 svg g#stepsXY {
     pointer-events: none;
     user-select: none;
-    font-family: 'Roboto-Regular', 'Roboto', sans-serif;
+    font-family: '0xProto Nerd Font Mono', sans-serif;
     font-size: 3px;
     fill: white;
 }
@@ -737,13 +737,13 @@ html.theme--light svg g#stepsXY {
 }
 
 svg a#tilt_adjust text {
-    font-family: 'Roboto-Regular', 'Roboto', sans-serif;
+    font-family: '0xProto Nerd Font Mono', sans-serif;
     font-size: 3px;
     display: none;
 }
 
 svg g#home_buttons text {
-    font-family: 'Roboto-Regular', 'Roboto', sans-serif;
+    font-family: '0xProto Nerd Font Mono', sans-serif;
     font-size: 5px;
     fill: black;
 }
