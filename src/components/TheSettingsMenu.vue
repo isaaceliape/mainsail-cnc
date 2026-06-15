@@ -9,52 +9,54 @@
             scrollable
             :aria-label="$t('Settings.InterfaceSettings')"
             @keydown.esc="closeSettingsMenu">
-            <panel
-                :title="$t('Settings.InterfaceSettings')"
-                :icon="mdiCogs"
-                card-class="settings-menu-dialog"
-                :margin-bottom="false">
-                <template #buttons>
+            <v-card class="settings-menu-dialog">
+                <v-toolbar flat density="compact">
+                    <v-icon start :icon="mdiCogs" />
+                    <v-toolbar-title>{{ $t('Settings.InterfaceSettings') }}</v-toolbar-title>
+                    <v-spacer />
                     <v-btn :icon="mdiCloseThick" rounded="0" @click="closeSettingsMenu" />
-                </template>
-                <template v-if="isMobile">
-                    <v-tabs v-model="activeTab" :center-active="true" :show-arrows="true">
-                        <v-tab
-                            v-for="(tab, index) of tabTitles"
-                            :key="index"
-                            :value="tab.name"
-                            class="justify-start">
-                            <v-icon start>{{ tab.icon }}</v-icon>
-                            {{ tab.title }}
-                        </v-tab>
-                    </v-tabs>
-                </template>
-                <v-row class="flex-row flex-nowrap">
-                    <v-col v-if="!isMobile" cols="auto" class="pr-0">
-                        <OverlayScrollbarsComponent ref="settingsTabsScroll" class="settings-tabs-bar desktop-settings-scroll">
-                            <v-tabs v-model="activeTab" direction="vertical">
-                                <v-tab
-                                    v-for="(tab, index) of tabTitles"
-                                    :key="index"
-                                    :value="tab.name"
-                                    class="justify-start"
-                                    style="width: 200px">
-                                    <v-icon start>{{ tab.icon }}</v-icon>
-                                    <span class="text-truncate">{{ tab.title }}</span>
-                                </v-tab>
-                            </v-tabs>
-                        </OverlayScrollbarsComponent>
-                    </v-col>
-                    <v-col :class="isMobile ? '' : 'pl-0'" style="min-width: 0;">
+                </v-toolbar>
+                <v-card-text>
+                    <template v-if="isMobile">
+                        <v-tabs v-model="activeTab" :center-active="true" :show-arrows="true">
+                            <v-tab
+                                v-for="(tab, index) of tabTitles"
+                                :key="index"
+                                :value="tab.name"
+                                class="justify-start">
+                                <v-icon start>{{ tab.icon }}</v-icon>
+                                {{ tab.title }}
+                            </v-tab>
+                        </v-tabs>
+                    </template>
+                    <v-row class="flex-row flex-nowrap ma-0 settings-contentrow">
+                        <v-col v-if="!isMobile" cols="auto" class="pr-0 settings-contentcol">
+                            <OverlayScrollbarsComponent ref="settingsTabsScroll" class="settings-tabs-bar">
+                                <v-tabs v-model="activeTab" direction="vertical">
+                                    <v-tab
+                                        v-for="(tab, index) of tabTitles"
+                                        :key="index"
+                                        :value="tab.name"
+                                        class="justify-start"
+                                        style="width: 200px">
+                                        <v-icon start>{{ tab.icon }}</v-icon>
+                                        <span class="text-truncate">{{ tab.title }}</span>
+                                    </v-tab>
+                                </v-tabs>
+                            </OverlayScrollbarsComponent>
+                        </v-col>
+                    <v-col :class="isMobile ? '' : 'pl-0'" style="min-width: 0;" class="settings-contentcol">
                         <OverlayScrollbarsComponent
                             ref="settingsScroll"
-                            :class="'settings-tabs ' + (isMobile ? '' : 'desktop-settings-scroll')"
-                            :options="{ overflowBehavior: { x: 'hidden' } }">
-                            <component :is="tabComponents[activeTab]" @scrollToTop="scrollToTop" />
+                            class="settings-tabs"
+                            :options="{ overflowBehavior: { x: 'hidden' } }"
+                            @focusin.capture="scrollFocusedSettingsElementIntoView">
+                            <component :is="tabComponents[activeTab]" @scrollToTop="scrollToTop" @resetLayout="resetDashboardLayout" />
                         </OverlayScrollbarsComponent>
                     </v-col>
-                </v-row>
-            </panel>
+                    </v-row>
+                </v-card-text>
+            </v-card>
         </v-dialog>
     </div>
 </template>
@@ -62,6 +64,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
 import type { Component } from 'vue'
+import { useStore } from 'vuex'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useBase } from '@/composables/useBase'
@@ -76,7 +79,8 @@ import SettingsDashboardTab from '@/components/settings/SettingsDashboardTab.vue
 import SettingsGCodeViewerTab from '@/components/settings/SettingsGCodeViewerTab.vue'
 import SettingsEditorTab from '@/components/settings/SettingsEditorTab.vue'
 import SettingsNavigationTab from '@/components/settings/SettingsNavigationTab.vue'
-import Panel from '@/components/ui/Panel.vue'
+import SettingsMiscellaneousTab from '@/components/settings/SettingsMiscellaneousTab.vue'
+import { OverlayScrollbarsComponent } from 'overlayscrollbars-vue'
 import {
     mdiCloseThick,
     mdiCodeTags,
@@ -93,11 +97,10 @@ import {
     mdiWebcam,
     mdiMenu,
 } from '@mdi/js'
-import SettingsMiscellaneousTab from '@/components/settings/SettingsMiscellaneousTab.vue'
-import { OverlayScrollbarsComponent } from 'overlayscrollbars-vue'
 
 const { t } = useI18n()
 const { isMobile } = useBase()
+const store = useStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -240,6 +243,7 @@ watch(showSettings, async (isOpen) => {
         await updateSettingsMenuQuery(activeTab.value)
         await nextTick()
         scrollActiveTabIntoView()
+        scrollSelectedSettingsElementIntoView()
         return
     }
 
@@ -250,6 +254,7 @@ watch(activeTab, async () => {
     await nextTick()
     scrollToTop()
     scrollActiveTabIntoView()
+    scrollSelectedSettingsElementIntoView()
 })
 
 function scrollToTop() {
@@ -264,6 +269,56 @@ function scrollActiveTabIntoView() {
 
     activeTabButton?.scrollIntoView({ block: 'nearest' })
 }
+
+function scrollSelectedSettingsElementIntoView() {
+    requestAnimationFrame(() => {
+        const viewport = settingsScroll.value?.osInstance()?.elements().viewport
+        if (!viewport) return
+
+        const selectedElements = Array.from(
+            viewport.querySelectorAll(
+                [
+                    '.v-btn--active',
+                    '.v-tab--selected',
+                    '.v-tab-item--selected',
+                    '.v-list-item--active',
+                    '.v-selection-control--dirty',
+                    '[aria-selected="true"]',
+                    ':focus-visible',
+                ].join(', ')
+            )
+        ) as HTMLElement[]
+
+        const viewportRect = viewport.getBoundingClientRect()
+        const selectedElement =
+            selectedElements.find((element) => {
+                const rect = element.getBoundingClientRect()
+                return rect.top < viewportRect.top || rect.bottom > viewportRect.bottom
+            }) ?? selectedElements[0]
+
+        selectedElement?.scrollIntoView({ block: 'nearest' })
+    })
+}
+
+function scrollFocusedSettingsElementIntoView(event: FocusEvent) {
+    const target = event.target as HTMLElement | null
+    if (!target) return
+
+    requestAnimationFrame(() => {
+        target.scrollIntoView({ block: 'nearest' })
+    })
+}
+
+function resetDashboardLayout() {
+    const viewport = (Array.isArray(route.query.dashboardViewport) ? route.query.dashboardViewport[0] : route.query.dashboardViewport) || 'desktop'
+    if (viewport === 'mobile') {
+        store.dispatch('gui/resetLayout', 'mobileLayout')
+    } else {
+        store.dispatch('gui/resetLayout', `${viewport}Layout1`)
+        store.dispatch('gui/resetLayout', `${viewport}Layout2`)
+        if (viewport === 'widescreen') store.dispatch('gui/resetLayout', 'widescreenLayout3')
+    }
+}
 </script>
 
 <style scoped>
@@ -277,17 +332,29 @@ function scrollActiveTabIntoView() {
 
 .settings-tabs-bar {
     border-right: 1px solid rgba(255, 255, 255, 0.12);
-    display: inline-block;
+    width: 100%;
     height: 100%;
-    width: fit-content;
 }
 
 html.theme--light .settings-tabs-bar {
     border-right: 1px solid rgba(0, 0, 0, 0.12);
 }
 
-.desktop-settings-scroll {
-    height: clamp(320px, calc(var(--app-height) - 215px), 476px);
+.settings-contentrow {
+    height: clamp(320px, calc(var(--app-height) - 191px), 500px);
+}
+
+.settings-contentcol {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.settings-contentcol > .settings-tabs,
+.settings-contentcol > .settings-tabs-bar {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: 100%;
 }
 </style>
 

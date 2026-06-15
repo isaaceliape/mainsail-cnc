@@ -1,15 +1,30 @@
 <style scoped>
+.settings-dashboard-tab {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: auto;
+}
+
+.settings-dashboard-tab__controls {
+    flex: 0 0 auto;
+}
+
+.settings-dashboard-tab__content {
+    flex: 1 1 auto;
+}
+
 .dashboard-rows-container :deep(.v-list-item) {
     min-height: 48px;
 }
 </style>
 
 <template>
-    <v-card flat>
+    <v-card flat class="settings-dashboard-tab">
         <v-card-text>
-            <v-row>
+            <v-row class="settings-dashboard-tab__controls">
                 <v-col class="text-center">
- <v-btn-toggle v-model="currentViewport" class="mx-auto" mandatory>
+  <v-btn-toggle v-model="currentViewport" class="mx-auto" mandatory>
  <v-btn value="mobile">
                             <span class="hidden-sm-and-down">{{ $t('Settings.DashboardTab.Mobile') }}</span>
                             <v-icon class="hidden-sm-and-down ml-2" :icon="mdiCellphone" />
@@ -36,9 +51,14 @@
                     </v-btn-toggle>
                 </v-col>
             </v-row>
-            <v-row>
+            <v-row class="settings-dashboard-tab__content">
                 <v-col class="dashboard-rows-container">
                     <component :is="currentTab"></component>
+                </v-col>
+            </v-row>
+            <v-row>
+                <v-col class="text-center py-2">
+                    <v-btn color="error" size="small" @click="$emit('resetLayout')">{{ $t('Settings.DashboardTab.ResetLayout') }}</v-btn>
                 </v-col>
             </v-row>
         </v-card-text>
@@ -58,6 +78,10 @@ import { mdiCellphone, mdiMonitorScreenshot, mdiMonitorDashboard, mdiTablet } fr
 const { isMobile, isTablet, isDesktop, isWidescreen } = useBase()
 const route = useRoute()
 const router = useRouter()
+
+const emit = defineEmits<{
+    (e: 'resetLayout'): void
+}>()
 
 const currentViewport = ref('desktop')
 const dashboardViewportQueryKey = 'dashboardViewport'
