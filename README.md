@@ -185,6 +185,23 @@ Read-only Klipper state flows directly from Mainsail's Vuex store subscription �
 
 This repository has progressed well beyond its initial scaffold. The fork is deployed and live on a Linux SBC at `~/mainsail/`, tracked by Moonraker's update_manager on the `develop` branch. On-device builds are supported (Node.js v20 + Bun).
 
+### CNC-specific cleanup
+
+All 3D-printer-only features have been removed:
+
+- ❌ Removed Bed Mesh, Bed Screws, Bed Tilt — no bed leveling needed for CNC
+- ❌ Removed Z-Offset, Z-Tilt, Screws Tilt Adjust — probe/Z calibration removed
+- ❌ Removed Filament sensors, charts, maintenance reminders — filament is 3D-only
+- ❌ Removed MMU / AFC / multi-material systems
+- ❌ Removed Spoolman integration
+- ❌ Removed Extruder-specific composables and metadata
+- ❌ Removed Temperature presets (PLA/ABS/PETG/cooldown)
+- ❌ Removed Exclude Object dialog from G-code viewer
+- ✅ Farm page repurposed from multi-printer to multi-CNC (`/allCncMachines`)
+- ✅ History page headers slimmed to CNC-relevant columns (Filename, Filesize, Job Time, CAM)
+- ✅ History page filters to only show `.gcode` files
+- ✅ Config Files panel shows file-type-specific icons and colors
+
 ### Mainsail fork features implemented
 
 - ✅ Six CNC dashboard panels (CNC Status, DRO, Jog, Offsets, Spindle & Coolant, MDI)
@@ -203,6 +220,11 @@ This repository has progressed well beyond its initial scaffold. The fork is dep
 - ✅ Homing override fix — corrected uppercase param keys (`'X'`/`'Y'`/`'Z'`) so `G28 X Y` no longer homes Z
 - ✅ **WCS Klipper plugin** — G10 L2/L20 support, G54–G59 offset tables with JSON persistence (`klipper-extras/work_coordinate_systems.py`)
 - ✅ **WCS macros** — dashboard-friendly WCS selector and per-WCS zero macros (`klipper-macros/wcs_macros.cfg`)
+- ✅ File-type-specific icons and colors in Config Files panel
+- ✅ Sortable columns in Config Files and History pages
+- ✅ Floating dashboard panels — drag, resize, dock with three-phase animation
+- ✅ Editor persists open file across page reloads (`?editorFile=` query param)
+- ✅ History filters to `.gcode` files only
 
 ### Moonraker CNC agent
 
