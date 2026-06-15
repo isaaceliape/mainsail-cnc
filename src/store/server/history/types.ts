@@ -97,6 +97,8 @@ export type HistoryListPanelColValue = Extract<
 >
 
 export interface HistoryListPanelCol {
+    title?: string
+    key?: string
     text: string
     value: HistoryListPanelColValue
     align: string
