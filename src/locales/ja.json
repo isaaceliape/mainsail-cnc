@@ -936,18 +936,10 @@
             "VariableFpsMin": "可変フレームレートの最低値"
         },
         "UiSettingsTab": {
-            "BoolBigThumbnail": "大きなサムネイル",
-            "BoolBigThumbnailDescription": "印刷中、状態パネルに大きなサムネイルを表示します。",
-            "BoolHideUploadAndPrintButton": "アップロード＆印刷ボタンを隠す",
-            "BoolHideUploadAndPrintButtonDescription": "上部バーの\"アップロード&印刷\"ボタンを表示または隠します。",
             "ConfirmOnEmergencyStop": "緊急停止時の確認",
             "ConfirmOnEmergencyStopDescription": "緊急停止時に確認ダイアログを表示します。",
             "ConfirmOnPowerDeviceChange": "電源デバイス変更時の確認",
             "ConfirmOnPowerDeviceChangeDescription": "電源デバイス変更時に確認ダイアログを表示します。",
-            "DisplayCANCEL_PRINT": "印刷取り消しの表示",
-            "DisplayCANCEL_PRINTDescription": "印刷取り消しボタンを常に表示します - 2層目の確認不要",
-            "GcodeThumbnails": "Gコードのサムネイル",
-            "GcodeThumbnailsDescription": "ボタンをクリックすると、説明書に移動します。",
             "Guide": "ガイド",
             "HideSaveConfigButtonForBedMesh": "ベッドメッシュ変更時の設定保存ボタンを表示しない",
             "HideSaveConfigButtonForBedMeshDescription": "ベッドメッシュの変更のみが保存の保留をされている時に、設定保存ボタンを表示しない。",

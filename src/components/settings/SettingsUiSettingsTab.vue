@@ -56,67 +56,6 @@
                     </v-menu>
                 </settings-row>
                 <v-divider class="my-2" />
-                <settings-row
-                    :title="$t('Settings.UiSettingsTab.GcodeThumbnails')"
-                    :sub-title="$t('Settings.UiSettingsTab.GcodeThumbnailsDescription')"
-                    :dynamic-slot-width="true">
- <v-btn
-                        variant="outlined"
-                        size="small"
-                        color="primary"
-                        href="https://docs.mainsail.xyz/overview/features/thumbnails"
-                        target="_blank">
-                        {{ $t('Settings.UiSettingsTab.Guide') }}
-                    </v-btn>
-                </settings-row>
-                <v-divider class="my-2" />
-                <settings-row
-                    :title="$t('Settings.UiSettingsTab.BoolBigThumbnail')"
-                    :sub-title="$t('Settings.UiSettingsTab.BoolBigThumbnailDescription')"
-                    :dynamic-slot-width="true">
-                    <v-switch v-model="boolBigThumbnail" hide-details class="mt-0" />
-                </settings-row>
-                <template v-if="boolBigThumbnail">
-                    <v-divider class="my-2" />
-                    <settings-row
-                        :title="$t('Settings.UiSettingsTab.PrintstatusThumbnailZoom')"
-                        :sub-title="$t('Settings.UiSettingsTab.PrintstatusThumbnailZoomDescription')"
-                        :dynamic-slot-width="true">
-                        <v-switch v-model="printstatusThumbnailZoom" hide-details class="mt-0" />
-                    </settings-row>
-                    <v-divider class="my-2" />
-                    <settings-row :title="$t('Settings.UiSettingsTab.BigThumbnailBackground')">
- <v-btn
-                            v-if="bigThumbnailBackground.toLowerCase() !== defaultBigThumbnailBackground.toLowerCase()"
-                            size="small"
-                            variant="text"
-                            class="minwidth-0"
-                            @click="bigThumbnailBackground = defaultBigThumbnailBackground">
-                            <v-icon size="small">{{ mdiRestart }}</v-icon>
-                        </v-btn>
-                        <v-menu location="bottom end" :close-on-content-click="false">
-                            <template #activator="{ props: activatorProps }">
- <v-btn
-                                    v-bind="activatorProps"
-                                    :color="bigThumbnailBackground"
-                                    class="minwidth-0 px-5"
-                                    small />
-                            </template>
-                            <v-color-picker
-                                :value="bigThumbnailBackground"
-                                hide-mode-switch
-                                mode="rgba"
-                                @update:color="updateBigThumbnailBackground" />
-                        </v-menu>
-                    </settings-row>
-                </template>
-                <v-divider class="my-2" />
-                <settings-row
-                    :title="$t('Settings.UiSettingsTab.DisplayCANCEL_PRINT')"
-                    :sub-title="$t('Settings.UiSettingsTab.DisplayCANCEL_PRINTDescription')"
-                    :dynamic-slot-width="true">
-                    <v-switch v-model="displayCancelPrint" hide-details class="mt-0" />
-                </settings-row>
                 <v-divider class="my-2" />
                 <settings-row
                     :title="$t('Settings.UiSettingsTab.ProgressAsFavicon')"
@@ -213,13 +152,6 @@
                 </settings-row>
                 <v-divider class="my-2" />
                 <settings-row
-                    :title="$t('Settings.UiSettingsTab.BoolHideUploadAndPrintButton')"
-                    :sub-title="$t('Settings.UiSettingsTab.BoolHideUploadAndPrintButtonDescription')"
-                    :dynamic-slot-width="true">
-                    <v-switch v-model="boolHideUploadAndPrintButton" hide-details class="mt-0" />
-                </settings-row>
-                <v-divider class="my-2" />
-                <settings-row
                     :title="$t('Settings.UiSettingsTab.PowerDeviceName')"
                     :sub-title="$t('Settings.UiSettingsTab.PowerDeviceNameDescription')"
                     :dynamic-slot-width="true">
@@ -232,20 +164,6 @@
                         hide-details
                         variant="outlined"
                         dense />
-                </settings-row>
-                <v-divider class="my-2" />
-                <settings-row
-                    :title="$t('Settings.UiSettingsTab.DisableFanAnimation')"
-                    :sub-title="$t('Settings.UiSettingsTab.DisableFanAnimationDescription')"
-                    :dynamic-slot-width="true">
-                    <v-switch v-model="disableFanAnimation" hide-details class="mt-0" />
-                </settings-row>
-                <v-divider class="my-2" />
-                <settings-row
-                    :title="$t('Settings.UiSettingsTab.ManualProbeDialog')"
-                    :sub-title="$t('Settings.UiSettingsTab.ManualProbeDialogDescription')"
-                    :dynamic-slot-width="true">
-                    <v-switch v-model="boolManualProbeDialog" hide-details class="mt-0" />
                 </settings-row>
                 <v-divider class="my-2" />
                 <settings-row
@@ -315,7 +233,7 @@ import { useI18n } from 'vue-i18n'
 import { useBase } from '@/composables/useBase'
 import { useTheme } from '@/composables/useTheme'
 import SettingsRow from '@/components/settings/SettingsRow.vue'
-import { defaultLogoColor, defaultPrimaryColor, defaultBigThumbnailBackground, themes } from '@/store/variables'
+import { defaultLogoColor, defaultPrimaryColor, themes } from '@/store/variables'
 import { mdiRestart, mdiTimerOutline } from '@mdi/js'
 import type { ServerPowerStateDevice } from '@/store/server/power/types'
 import { clearColorObject } from '@/plugins/helpers'
@@ -383,27 +301,6 @@ const primaryColor = computed({
     get: () => store.state.gui.uiSettings.primary,
     set: (newVal) => {
         store.dispatch('gui/saveSetting', { name: 'uiSettings.primary', value: newVal })
-    },
-})
-
-const boolBigThumbnail = computed({
-    get: () => store.state.gui.uiSettings.boolBigThumbnail,
-    set: (newVal) => {
-        store.dispatch('gui/saveSetting', { name: 'uiSettings.boolBigThumbnail', value: newVal })
-    },
-})
-
-const bigThumbnailBackground = computed({
-    get: () => store.state.gui.uiSettings.bigThumbnailBackground,
-    set: (newVal) => {
-        store.dispatch('gui/saveSetting', { name: 'uiSettings.bigThumbnailBackground', value: newVal })
-    },
-})
-
-const displayCancelPrint = computed({
-    get: () => store.state.gui.uiSettings.displayCancelPrint,
-    set: (newVal) => {
-        store.dispatch('gui/saveSetting', { name: 'uiSettings.displayCancelPrint', value: newVal })
     },
 })
 
@@ -499,10 +396,10 @@ const defaultNavigationStateSettings = computed(() => [
     },
 ])
 
-const boolHideUploadAndPrintButton = computed({
-    get: () => store.state.gui.uiSettings.boolHideUploadAndPrintButton ?? false,
+const hideUpdateWarnings = computed({
+    get: () => store.state.gui.uiSettings.hideUpdateWarnings ?? false,
     set: (newVal) => {
-        store.dispatch('gui/saveSetting', { name: 'uiSettings.boolHideUploadAndPrintButton', value: newVal })
+        store.dispatch('gui/saveSetting', { name: 'uiSettings.hideUpdateWarnings', value: newVal })
     },
 })
 
@@ -535,34 +432,6 @@ const powerDeviceOptions = computed(() => {
     })
 
     return items
-})
-
-const disableFanAnimation = computed({
-    get: () => store.state.gui.uiSettings.disableFanAnimation ?? false,
-    set: (newVal) => {
-        store.dispatch('gui/saveSetting', { name: 'uiSettings.disableFanAnimation', value: newVal })
-    },
-})
-
-const boolManualProbeDialog = computed({
-    get: () => store.state.gui.uiSettings.boolManualProbeDialog ?? true,
-    set: (newVal) => {
-        store.dispatch('gui/saveSetting', { name: 'uiSettings.boolManualProbeDialog', value: newVal })
-    },
-})
-
-const printstatusThumbnailZoom = computed({
-    get: () => store.state.gui.uiSettings.printstatusThumbnailZoom ?? true,
-    set: (newVal) => {
-        store.dispatch('gui/saveSetting', { name: 'uiSettings.printstatusThumbnailZoom', value: newVal })
-    },
-})
-
-const hideUpdateWarnings = computed({
-    get: () => store.state.gui.uiSettings.hideUpdateWarnings ?? false,
-    set: (newVal) => {
-        store.dispatch('gui/saveSetting', { name: 'uiSettings.hideUpdateWarnings', value: newVal })
-    },
 })
 
 const dashboardFilesLimit = computed({
@@ -621,14 +490,6 @@ function updatePrimaryColor(newVal: ColorPickerValue) {
     if (primaryColorTimer) clearTimeout(primaryColorTimer)
     primaryColorTimer = setTimeout(() => {
         primaryColor.value = clearColorObject(newVal)
-    }, 500)
-}
-
-let bigThumbnailTimer: ReturnType<typeof setTimeout> | null = null
-function updateBigThumbnailBackground(newVal: ColorPickerValue) {
-    if (bigThumbnailTimer) clearTimeout(bigThumbnailTimer)
-    bigThumbnailTimer = setTimeout(() => {
-        bigThumbnailBackground.value = clearColorObject(newVal)
     }, 500)
 }
 

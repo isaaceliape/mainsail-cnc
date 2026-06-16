@@ -94,19 +94,13 @@ export interface GuiState {
         confirmOnCoolDown: boolean
         confirmOnPowerDeviceChange: boolean
         confirmOnCancelJob: boolean
-        boolBigThumbnail: boolean
-        bigThumbnailBackground: string
         boolWideNavDrawer: boolean
-        boolHideUploadAndPrintButton: boolean
         navigationStyle: 'iconsAndText' | 'iconsOnly'
         defaultNavigationStateSetting: 'alwaysOpen' | 'alwaysClosed' | 'lastState'
         powerDeviceName: string | null
         progressAsFavicon: boolean
-        disableFanAnimation: boolean
-        boolManualProbeDialog: boolean
         tempchartHeight: number
         hideUpdateWarnings: boolean
-        printstatusThumbnailZoom: boolean
         dashboardFilesLimit: number
         dashboardFilesFilter: GuiStateUiSettingsDashboardFilesFilter[]
         dashboardHistoryLimit: number

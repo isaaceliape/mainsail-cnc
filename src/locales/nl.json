@@ -1004,18 +1004,10 @@
             "VariableFpsMinDescription": "Minimale waarde voor variabele FPS"
         },
         "UiSettingsTab": {
-            "BoolBigThumbnail": "Grote thumbnail",
-            "BoolBigThumbnailDescription": "Toon een grote thumbnail in het statuspaneel tijdens de print.",
-            "BoolHideUploadAndPrintButton": "Verberg Upload en Print knop",
-            "BoolHideUploadAndPrintButtonDescription": "Toon of verberg de \"Upload en Print\" knop in de bovenbalk.",
             "ConfirmOnEmergencyStop": "Vraag om bevestiging bij Noodstop",
             "ConfirmOnEmergencyStopDescription": "Toon een dialoogvenster bij een Noodstop",
             "ConfirmOnPowerDeviceChange": "Bevesting bij wijzigen van Stroomvoorziening van apparaten",
             "ConfirmOnPowerDeviceChangeDescription": "Vraag om een bevesting bij wijzigen van Stroomvoorziening van apparaten",
-            "DisplayCANCEL_PRINT": "Toon CANCEL_PRINT",
-            "DisplayCANCEL_PRINTDescription": "Toont de CANCEL_PRINT knop altijd - geen bevestiging nodig.",
-            "GcodeThumbnails": "Gcode thumbnails",
-            "GcodeThumbnailsDescription": "Klik op de knop om naar de instructies te gaan.",
             "Guide": "Richtlijnen",
             "HideSaveConfigButtonForBedMesh": "Verberg SAVE_CONFIG knop voor bed_mesh aanpassingen",
             "HideSaveConfigButtonForBedMeshDescription": "Verberg SAVE_CONFIG,wanneer alleen bed_mesh aanpassingen opgeslagen hoeven te worden in Klipper.",
