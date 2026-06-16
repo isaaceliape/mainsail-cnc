@@ -52,27 +52,28 @@ Repurpose the Farm feature for CNC machines instead of 3D printers. Keep all inf
 
 ## Phase 3: Remove Z-Offset / Z-Tilt / Screws Tilt Adjust
 
-| Action | File |
-|---|---|
-| **Delete** | `src/composables/useZOffset.ts` |
-| **Delete** | `src/components/panels/ToolheadControls/ZoffsetControl.vue` |
-| **Delete** | `src/components/dialogs/TheScrewsTiltAdjustDialog.vue` |
-| **Delete** | `src/components/dialogs/TheScrewsTiltAdjustDialogEntry.vue` |
-| Edit | `src/App.vue` — remove `<the-screws-tilt-adjust-dialog />` |
-| Edit | `src/composables/useControl.ts` — remove `existsZtilt`, `existsScrewsTilt`, `doZtilt` |
-| Edit | `src/components/panels/ToolheadControls/CircleControl.vue` — remove Z-tilt action |
-| Edit | `src/components/panels/ToolheadControls/CrossControl.vue` — remove Z-tilt action |
-| Edit | `src/components/panels/ToolheadControlPanel.vue` — remove Z-tilt, Z-offset refs |
-| Edit | `src/components/panels/ToolheadControls/ToolheadPanelSettings.vue` — remove `showZOffset` |
-| Edit | `src/store/printer/actions.ts` — remove `clearScrewsTiltAdjust` |
-| Edit | `src/store/printer/mutations.ts` — remove `clearScrewsTiltAdjust` |
-| Edit | `src/store/printer/getters.ts` — remove `existsZtilt`, `existsScrewsTilt` |
-| Edit | `src/store/gui/getters.ts` — remove default action `'ztilt'` |
-| Edit | `src/store/gui/types.ts` — remove `actionButton`, `offsetZSaveOption`, `boolScrewsTiltAdjustDialog`, `showZOffset` |
-| Edit | `src/store/gui/index.ts` — remove defaults |
-| Edit | `src/composables/useDashboard.ts` — remove `'zoffset'` panel case |
-| Edit | `src/components/settings/SettingsControlTab.vue` — remove Z-offset options |
-| Edit | `src/components/settings/SettingsUiSettingsTab.vue` — remove screw tilt toggle |
+| Action | File | Status |
+|---|---|---|---|
+| **Delete** | `src/composables/useZOffset.ts` | ✅ |
+| **Delete** | `src/components/panels/ToolheadControls/ZoffsetControl.vue` | ✅ |
+| **Delete** | `src/components/dialogs/TheScrewsTiltAdjustDialog.vue` | ✅ |
+| **Delete** | `src/components/dialogs/TheScrewsTiltAdjustDialogEntry.vue` | ✅ |
+| **Delete** | `src/components/panels/ToolheadControlPanel.vue` | ✅ (entire panel removed) |
+| **Delete** | `src/components/panels/ToolheadControls/` (all 5 files) | ✅ |
+| **Delete** | `src/components/settings/SettingsControlTab.vue` | ✅ |
+| **Delete** | `src/store/gui/types.ts` — toolhead view settings | ✅ |
+| **Delete** | `src/store/gui/index.ts` — toolhead defaults | ✅ |
+| Edit | `src/App.vue` — remove `<the-screws-tilt-adjust-dialog />` | ✅ |
+| Edit | `src/composables/useControl.ts` — remove `existsZtilt`, `existsScrewsTilt`, `doZtilt` | ✅ |
+| Edit | `src/store/printer/actions.ts` — remove `clearScrewsTiltAdjust` | ✅ |
+| Edit | `src/store/printer/mutations.ts` — remove `clearScrewsTiltAdjust` | ✅ |
+| Edit | `src/store/printer/getters.ts` — remove `existsZtilt`, `existsScrewsTilt` | ✅ |
+| Edit | `src/store/gui/getters.ts` — remove default action `'ztilt'` | ✅ |
+| Edit | `src/store/gui/types.ts` — remove `actionButton`, `offsetZSaveOption`, `boolScrewsTiltAdjustDialog`, `showZOffset` | ✅ |
+| Edit | `src/store/gui/index.ts` — remove defaults | ✅ |
+| Edit | `src/composables/useDashboard.ts` — remove `'zoffset'` panel case | ✅ |
+| Edit | `src/components/settings/SettingsUiSettingsTab.vue` — remove screw tilt toggle | ✅ |
+| Edit | `src/components/settings/SettingsUiSettingsTab.vue` — remove 3D settings (thumbnails, cancel-print, fan animation, probe dialog, upload-and-print) | ✅ |
 
 ---
 

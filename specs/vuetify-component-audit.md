@@ -174,13 +174,7 @@ Total Vue files: 247
 - [x] src/components/panels/TemperaturePanel.vue
 - [x] src/components/panels/Timelapse/TimelapseFilesPanel.vue
 - [x] src/components/panels/Timelapse/TimelapseStatusPanel.vue
-- [x] src/components/panels/ToolheadControlPanel.vue
-- [x] src/components/panels/ToolheadControls/BarsControl.vue
-- [x] src/components/panels/ToolheadControls/CircleControl.vue
-- [x] src/components/panels/ToolheadControls/CrossControl.vue
-- [x] src/components/panels/ToolheadControls/MoveToControl.vue
-- [x] src/components/panels/ToolheadControls/ToolheadPanelSettings.vue
-- [x] src/components/panels/ToolheadControls/ZoffsetControl.vue
+<!-- ToolheadControlPanel and ToolheadControls/* — deleted (CNC fork cleanup) -->
 - [x] src/components/panels/WebcamPanel.vue
 - [x] src/components/settings/Dashboard/Desktop.vue
 - [x] src/components/settings/Dashboard/Mobile.vue
@@ -206,7 +200,7 @@ Total Vue files: 247
 - [x] src/components/settings/Presets/PresetsForm.vue
 - [x] src/components/settings/Presets/PresetsFormCooldown.vue
 - [x] src/components/settings/SettingsConsoleTab.vue
-- [x] src/components/settings/SettingsControlTab.vue
+<!-- SettingsControlTab.vue — deleted (CNC fork cleanup) -->
 - [x] src/components/settings/SettingsDashboardTab.vue
 - [x] src/components/settings/SettingsEditorTab.vue
 - [x] src/components/settings/SettingsGCodeViewerTab.vue

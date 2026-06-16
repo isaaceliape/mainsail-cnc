@@ -179,7 +179,7 @@ Read-only Klipper state flows directly from Mainsail's Vuex store subscription �
 | `src/store/gui/index.ts` | Enables `cncMode: true` by default; places CNC panels in default layouts; hides stock printer metadata columns |
 | `src/store/gui/getters.ts` | Gates CNC panels behind `gcodeViewer.cncMode`; filters them out when disabled |
 | `src/pages/Dashboard.vue` | Imports and registers all CNC panels; renders them in responsive layout columns |
-| `src/components/mixins/dashboard.ts` | Provides CNC labels and icons (`mdiAxisArrow`, `mdiCrosshairsGps`, etc.) |
+| `src/composables/useDashboard.ts` | Provides CNC labels and icons (`mdiAxisArrow`, `mdiCrosshairsGps`, etc.) |
 | `src/store/files/cncApi.ts` | Typed HTTP helpers for all `/server/cnc/...` endpoints |
 | `src/store/files/cncMetadata.ts` | Sidecar loader + ViewModel builder for CAM metadata display |
 | `src/components/panels/Gcodefiles/GcodefilesPanelListCardFile.vue` | Renders CAM metadata fields on each card |
@@ -200,6 +200,9 @@ All 3D-printer-only features have been removed:
 - ❌ Removed Extruder-specific composables and metadata
 - ❌ Removed Temperature presets (PLA/ABS/PETG/cooldown)
 - ❌ Removed Exclude Object dialog from G-code viewer
+- ❌ Removed Toolhead control panel and all control style components (Bars/Circle/Cross)
+- ❌ Removed SettingsControlTab (toolhead control settings tab)
+- ❌ Removed 3D-specific UI settings: G-Code thumbnails, big thumbnail zoom/background, CANCEL_PRINT button, upload-and-print button, fan animation toggle, manual probe helper dialog
 - ✅ Farm page repurposed from multi-printer to multi-CNC (`/allCncMachines`)
 - ✅ History page headers slimmed to CNC-relevant columns (Filename, Filesize, Job Time, CAM)
 - ✅ History page filters to only show `.gcode` files
