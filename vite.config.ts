@@ -63,9 +63,9 @@ const PWAConfig: Partial<VitePWAOptions> = {
         ],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
     },
-    /* enable sw on development */
+    /* disable sw on development to avoid workbox precaching noise */
     devOptions: {
-        enabled: true,
+        enabled: false,
         type: 'module',
         suppressWarnings: true,
     },

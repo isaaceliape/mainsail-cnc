@@ -103,6 +103,18 @@ initLoad().then(() => {
     app.use(store)
     app.mount('#app')
 
+    window.console.log(
+        '%c\n' +
+        ' ███████╗ ██████╗   ██████╗ ███╗   ██╗  ██████╗ \n' +
+        ' ██╔════╝ ╚════██╗ ██╔════╝ ████╗  ██║ ██╔════╝ \n' +
+        ' █████╗    █████╔╝ ██║      ██╔██╗ ██║ ██║      \n' +
+        ' ██╔══╝    ╚═══██╗ ██║      ██║╚██╗██║ ██║      \n' +
+        ' ███████╗ ██████╔╝ ╚██████╗ ██║ ╚████║ ╚██████╗ \n' +
+        ' ╚══════╝ ╚═════╝   ╚═════╝ ╚═╝  ╚═══╝  ╚═════╝ \n' +
+        '                                                \n',
+        'color: #4CAF50; font-weight: bold;'
+    )
+
     // Restore scroll position after DOM renders
     const savedScroll = Number(localStorage.getItem('cncBodyScrollTop'))
     if (savedScroll) {

@@ -84,7 +84,7 @@ export const vLongpress: Directive<HTMLElement, LongpressBinding> = {
             if (pressTimer !== null) e.preventDefault()
         }
 
-        el.addEventListener('touchstart', start)
+        el.addEventListener('touchstart', start, { passive: true })
         el.addEventListener('touchmove', cancelOnMove, { passive: true })
         el.addEventListener('touchend', cancel)
         el.addEventListener('touchcancel', cancel)
