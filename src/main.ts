@@ -25,7 +25,6 @@ import vLongpress from '@/directives/longpress'
 import vResponsiveClass from '@/directives/responsive-class'
 
 import { nextTick } from 'vue'
-import { defaultMode } from '@/store/variables'
 import { setAndLoadLocale } from '@/plugins/i18n'
 import router from '@/plugins/router'
 import store from '@/store'
@@ -71,8 +70,6 @@ const initLoad = async () => {
 
         const locale = (file.defaultLocale ?? 'en') as string
         await setAndLoadLocale(locale)
-
-        const mode = file.defaultMode ?? defaultMode
     } catch (e) {
         window.console.error('Config init error:', e)
     }

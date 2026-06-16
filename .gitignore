@@ -33,4 +33,5 @@ package-lock.json
 packages/test/
 page-snapshot*.txt
 temp/
+validation_screenshot*.png
 verbose-snapshot*.txt

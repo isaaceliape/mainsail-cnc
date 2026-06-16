@@ -3,7 +3,7 @@
     "version": "2.17.0",
     "private": true,
     "type": "module",
-    "decription": "a klipper web interface",
+    "description": "a klipper web interface for CNC machines",
     "author": {
         "name": "Stefan Dej"
     },
@@ -23,8 +23,7 @@
         "test:unit": "vitest run",
         "test:unit:watch": "vitest",
         "test:coverage": "vitest run --coverage",
-        "test:scripts": "bats tests/scripts/",
-        "changelog": "git cliff v0.0.4..$(git describe --tags $(git rev-list --tags --max-count=1)) --output CHANGELOG.md"
+        "test:scripts": "bats tests/scripts/"
     },
     "dependencies": {
         "@codemirror/commands": "^6.0.1",
@@ -102,7 +101,6 @@
         "typescript": "^5.7.0",
         "unplugin-vue-components": "^0.22.12",
         "vite": "^7.3.5",
-        "vite-plugin-checker": "^0.8.0",
         "vite-plugin-package-version": "^1.1.0",
         "vite-plugin-pwa": "^1.2.0",
         "vitest": "^3.2.6",
