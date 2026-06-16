@@ -377,7 +377,7 @@ users who prefer complete control over their installation and configuration.
 #### Hardware Requirements
 
 - **Single-Board Computer (SBC) or Linux Machine:** Raspberry Pi (3A+ or newer), BTT-CB1, Odroid, or x86 server.
-  Minimum: multi-core CPU, 512 MB RAM. Recommended: 1 GB+ RAM for on-device builds.
+  Minimum: multi-core CPU, 512 MB RAM. Frontend builds are handled by CI nightly releases — no need for 1 GB+ RAM.
 - **MicroSD Card (for Raspberry Pi):** 16 GB minimum. 32 GB+ if storing many G-code files.
 
 #### Operating System
@@ -731,6 +731,25 @@ Open `http://<your-device-ip>` in a browser. You should see:
 
 ## Updating Mainsail-CNC
 
+Updates are handled automatically by Moonraker's update manager. The
+`[update_manager mainsail-cnc]` section includes a `post_update_script`
+that runs `scripts/post_update.sh` after every successful `git pull`.
+
+This script:
+
+1. **Downloads a pre-built frontend** from the latest CI nightly release
+   (no on-device `vite build` needed — avoids OOM on low-RAM devices)
+2. **Re-vendors the CNC agent** (`cnc_agent.py`, `cnc_metadata.py`)
+3. **Re-deploys the metadata extractor**
+4. **Re-deploys the WCS Klipper plugin and macros**
+5. **Restarts Moonraker**
+
+### Via Mainsail UI (Update Manager)
+
+1. Go to **Machine** → **Update Manager**
+2. Find **Mainsail-CNC** and click **Update**
+3. Everything updates automatically — frontend, agent, macros, extractor
+
 ### Via Ansible playbook
 
 ```bash
@@ -748,43 +767,27 @@ git pull
 ansible-playbook ansible/playbooks/deploy.yml
 ```
 
-### Via Mainsail UI (Update Manager)
+### Manual steps (if not using post_update_script)
 
-1. Go to **Machine** → **Update Manager**
-2. Find **Mainsail-CNC** and click **Update**
-3. Moonraker will `git pull` the latest code and restart
+If `post_update_script` is not configured, run these steps after a `git pull`:
 
-### Post-update steps (bash scripts, legacy)
-
-After a `git pull`, the following steps are needed to fully update:
-
-1. **Re-run the Ansible install playbook** (recommended):
+1. **Re-vendor the agent** (if agent code changed):
    ```bash
    cd ~/mainsail-cnc
-   ansible-playbook ansible/playbooks/install.yml
+   ansible-playbook ansible/playbooks/install.yml --tags agent,moonraker-config
    ```
 
-2. **Re-vendor the agent** (if the agent code changed, bash alternative):
+2. **Rebuild the frontend** (if frontend code changed):
    ```bash
    cd ~/mainsail-cnc
-   ./scripts/install_to_moonraker.sh
+   ./scripts/download_frontend.sh
    ```
 
-3. **Rebuild the frontend** (if frontend code changed):
-   ```bash
-   cd ~/mainsail-cnc
-   bun install --frozen-lockfile  # only if bun.lock changed
-   bun run build
-   ./deploy.sh --live
-   ```
-
-4. **Restart Klipper** (if macros changed):
+3. **Restart Klipper** (if macros changed):
    From the Mainsail UI, click the **Restart** button in the Klippy State panel, or:
    ```bash
    sudo systemctl restart klipper
    ```
-
-The Update Manager entry includes a `post_update` hint reminding you of these steps.
 
 ---
 
@@ -993,11 +996,21 @@ ls ~/moonraker/moonraker/components/cnc_metadata/
 
 Both directories should exist with `__init__.py` and the main `.py` file.
 
-### Build fails on low-memory devices (e.g., Pi Zero)
+### Build fails on low-memory devices (e.g., Pi Zero, CB1)
 
-On-device builds may require more RAM than available. Options:
+On-device builds are no longer necessary — every push to `develop` triggers
+a CI build that publishes a `nightly` GitHub release with the pre-built
+frontend. The `post_update_script` hook downloads this automatically.
 
-1. **Build on another machine** and copy `dist/` to the target:
+If you need to deploy manually:
+
+1. **Download the latest nightly release**:
+   ```bash
+   cd ~/mainsail-cnc
+   ./scripts/download_frontend.sh
+   ```
+
+2. **Or build on another machine** and copy `dist/` to the target:
    ```bash
    # On your development machine
    cd mainsail-cnc
@@ -1006,8 +1019,6 @@ On-device builds may require more RAM than available. Options:
    # Copy to target
    scp -r dist/* pi@<printer-ip>:~/mainsail/
    ```
-
-2. **Use the pre-built zip** from a CI release if available.
 
 ---
 

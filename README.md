@@ -197,7 +197,7 @@ Read-only Klipper state flows directly from Mainsail's Vuex store subscription �
 
 ## Status
 
-This repository has progressed well beyond its initial scaffold. The fork is deployed and live on a Linux SBC at `~/mainsail/`, tracked by Moonraker's update_manager on the `develop` branch. On-device builds are supported (Node.js v20 + Bun). Ansible playbooks are available for idempotent install/deploy/uninstall at `ansible/`.
+This repository has progressed well beyond its initial scaffold. The fork is deployed and live on a Linux SBC at `~/mainsail/`, tracked by Moonraker's update_manager on the `develop` branch. Pre-built frontend releases are available via CI (every push to `develop` publishes a `nightly` release), so low-RAM devices like the CB1 avoid running `vite build` locally. Ansible playbooks are available for idempotent install/deploy/uninstall at `ansible/`.
 
 ### CNC-specific cleanup
 
@@ -229,6 +229,8 @@ All 3D-printer-only features have been removed:
 - ✅ Moonraker CNC agent component with `/server/cnc/...` REST endpoints
 - ✅ Metadata extractor CLI (`scripts/cnc_metadata_extractor.py`)
 - ✅ Ansible playbooks for idempotent install/deploy/uninstall
+- ✅ Pre-built nightly CI releases — no on-device frontend build needed
+- ✅ Automatic post-update hook (`post_update_script`) — updates agent + frontend on git pull
 - ✅ Deploy script + Moonraker update-manager integration
 - ✅ Klipper G-code caveats documented
 - ✅ Compact DRO readout in app header toolbar (machine position, homed state, live velocity, G90/G91 mode)

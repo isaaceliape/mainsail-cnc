@@ -101,18 +101,6 @@ Both methods vendor the package into moonraker's `components/` directory,
 ensure the `[cnc_agent]` section is present in the active `moonraker.conf`,
 and restart Moonraker.
 
-## Updates via the Ansible playbook
-
-After pulling the latest code:
-
-```sh
-cd ~/mainsail-cnc
-git pull
-ansible-playbook ansible/playbooks/install.yml
-```
-
-The playbook is idempotent — it only re-vendors files that have changed.
-
 ## Updates via the Mainsail update manager
 
 The Ansible install playbook and the bash install script both wire the
@@ -126,21 +114,43 @@ clone on first run (and pulls on subsequent runs) so
 it's a real git checkout of the project — no synthetic subpath, no
 "ahead 1, behind N" weirdness.
 
-Clicking **Update** in the Mainsail UI runs `git pull` and restarts
-Moonraker. The agent is vendored into
-`moonraker/moonraker/components/cnc_agent/` by the install, so a
-pull alone won't activate the new code — re-run the Ansible install
-playbook or the bash script to re-vendor and restart Moonraker.
+The update manager entry includes a `post_update_script` that runs
+`scripts/post_update.sh` after every successful `git pull`. This
+script handles everything automatically:
 
-To skip the update-manager work:
+1. **Downloads the latest pre-built frontend** from the CI nightly release
+   (avoids running `vite build` on the printer)
+2. **Re-vendors the CNC agent** files into `moonraker/components/`
+3. **Re-deploys the metadata extractor**, WCS plugin, and macros
+4. **Restarts Moonraker**
+
+So clicking **Update** in the Mainsail UI is all you need — the
+frontend, agent, and plugins are all updated automatically.
+
+## Updates via the Ansible playbook
 
 ```sh
-# Ansible: use --skip-tags
-ansible-playbook ansible/playbooks/install.yml --skip-tags moonraker-config
+cd ~/mainsail-cnc
+git pull
+ansible-playbook ansible/playbooks/install.yml
+```
 
-# Bash (legacy):
+The playbook is idempotent — it only re-vendors files that have changed.
+
+## Manual update (legacy)
+
+If `post_update_script` is not configured, re-run the install after
+a git pull:
+
+```sh
+cd ~/mainsail-cnc
+./scripts/install_to_moonraker.sh
+```
+
+To skip the update-manager registration:
+
+```sh
 CNC_SKIP_UPDATE_MANAGER=1 ./scripts/install_to_moonraker.sh
-# or skip just the clone/pull step (use an existing checkout):
 CNC_SKIP_CLONE=1 ./scripts/install_to_moonraker.sh
 ```
 

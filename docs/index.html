@@ -345,23 +345,23 @@
         <span class="badge">Stable</span>
       </div>
       <div class="feature-card">
-        <h3>Moonraker Update Manager</h3>
-        <p>Automatic updates via Moonraker&rsquo;s update manager. Configure with the provided <code>update-manager.conf</code> example.</p>
-        <span class="badge">Stable</span>
-      </div>
-      <div class="feature-card">
         <h3>Ansible Playbooks</h3>
         <p>Idempotent install, deploy, and uninstall via Ansible playbooks in the <code>ansible/</code> directory. Supports <code>--check</code> mode and remote SSH hosts.</p>
         <span class="badge">Recommended</span>
       </div>
       <div class="feature-card">
-        <h3>Moonraker CNC Agent</h3>
-        <p>Install the CNC agent alongside Klipper extras and macros using the Ansible playbook or the bundled <code>install_to_moonraker.sh</code> script.</p>
+        <h3>Moonraker Update Manager</h3>
+        <p>Automatic updates via Moonraker&rsquo;s update manager. The <code>post_update_script</code> hook rebuilds the frontend, re-vendors the agent, and restarts services on every <code>git pull</code>.</p>
         <span class="badge">Stable</span>
       </div>
       <div class="feature-card">
-        <h3>Deploy Script</h3>
-        <p>One-shot <code>deploy.sh</code> for quick frontend builds and deployment to an existing Mainsail installation.</p>
+        <h3>Pre-built Nightly Releases</h3>
+        <p>Every push to <code>develop</code> publishes a nightly release with the built frontend. Devices with limited RAM download the pre-built zip instead of running <code>vite build</code> locally.</p>
+        <span class="badge">CI</span>
+      </div>
+      <div class="feature-card">
+        <h3>Moonraker CNC Agent</h3>
+        <p>Install the CNC agent alongside Klipper extras and macros using the Ansible playbook or the bundled <code>install_to_moonraker.sh</code> script.</p>
         <span class="badge">Stable</span>
       </div>
     </div>

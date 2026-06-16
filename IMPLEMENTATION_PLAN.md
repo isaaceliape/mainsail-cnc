@@ -156,8 +156,10 @@ merge unrelated histories".
 The section uses `channel: dev` and `refresh_interval: 24`. It has
 `enable_node_updates: False` because the fork uses Bun, not npm, and
 `managed_services: moonraker` so Moonraker restarts after a
-`git pull`. The `info_tags.post_update` hint lists the three manual
-post-pull steps (re-vendor agent, `bun run build`, RESTART Klipper).
+`git pull`. The `post_update_script` at `scripts/post_update.sh`
+handles everything automatically — downloads pre-built frontend from
+CI nightly release, re-vendors the agent, re-deploys plugins, and
+restarts Moonraker.
 
 The `ansible/playbooks/install.yml` playbook and the legacy `scripts/install_to_moonraker.sh` script:
 
