@@ -4,20 +4,20 @@
             <v-col class="pl-6">
                 <strong>{{ name }}</strong>
                 <br />
-                <template v-if="type === 'git_repo' && commitsBehind.length">
+                <template v-if="['git_repo', 'zip'].includes(type) && commitsBehind.length">
                     <a class="text-info cursor--pointer" @click="boolShowCommitList = true">
-                        <v-icon size="small" color="info" class="mr-1">{{ mdiUpdate }}</v-icon>
-                        {{ versionOutput }}
-                    </a>
-                </template>
-                <template v-else-if="type === 'web' && semverUpdatable">
-                    <a class="text-info text-decoration-none" :href="webLinkRelease" target="_blank">
                         <v-icon size="small" color="info" class="mr-1">{{ mdiUpdate }}</v-icon>
                         {{ versionOutput }}
                     </a>
                 </template>
                 <template v-else-if="type === 'python' && semverUpdatable">
                     <a class="text-info text-decoration-none" :href="pythonChangelog" target="_blank">
+                        <v-icon size="small" color="info" class="mr-1">{{ mdiUpdate }}</v-icon>
+                        {{ versionOutput }}
+                    </a>
+                </template>
+                <template v-else-if="isSemverType && semverUpdatable">
+                    <a class="text-info text-decoration-none" :href="webLinkRelease" target="_blank">
                         <v-icon size="small" color="info" class="mr-1">{{ mdiUpdate }}</v-icon>
                         {{ versionOutput }}
                     </a>
@@ -109,7 +109,7 @@
                 </v-alert>
             </v-col>
         </v-row>
-        <git-commits-list v-if="type === 'git_repo'" v-model="boolShowCommitList" :repo="repo" />
+        <git-commits-list v-if="['git_repo', 'zip'].includes(type)" v-model="boolShowCommitList" :repo="repo" />
         <update-hint
             v-model="boolShowUpdateHint"
             :repo="repo"
@@ -205,6 +205,10 @@ const versionOutput = computed(() => {
 
 const configuredType = computed(() => props.repo.configured_type ?? 'git_repo')
 
+const isSemverType = computed(() =>
+    ['web', 'python', 'executable', 'zip'].includes(type.value)
+)
+
 const isValid = computed(() => props.repo.is_valid ?? true)
 
 const isDirty = computed(() => props.repo.is_dirty ?? false)
@@ -229,13 +233,13 @@ const existsRecoveryUrl = computed(() => {
 const btnDisabled = computed(() => {
     if (['printing', 'paused'].includes(printer_state.value)) return true
     if (!isValid.value || isCorrupt.value || isDirty.value || commitsBehind.value.length) return false
-    if (['python', 'web'].includes(type.value)) return !semverUpdatable.value
+    if (isSemverType.value) return !semverUpdatable.value
     return commitsBehind.value.length === 0
 })
 
 const btnIcon = computed(() => {
     if (isDetached.value || !isValid.value || isCorrupt.value || isDirty.value) return mdiCloseCircle
-    if (['python', 'web'].includes(type.value)) {
+    if (isSemverType.value) {
         if (semverUpdatable.value) return mdiProgressUpload
         else if (localVersion.value === null || remoteVersion.value === null) return mdiHelpCircleOutline
     }
@@ -245,7 +249,7 @@ const btnIcon = computed(() => {
 
 const btnColor = computed(() => {
     if (isCorrupt.value || isDetached.value || isDirty.value || !isValid.value) return 'warning'
-    if (['python', 'web'].includes(type.value) && semverUpdatable.value) return 'primary'
+    if (isSemverType.value && semverUpdatable.value) return 'primary'
     if (type.value === 'git_repo' && commitsBehind.value.length) return 'primary'
     return 'success'
 })
@@ -255,7 +259,7 @@ const btnText = computed(() => {
     if (isDetached.value) return t('Machine.UpdatePanel.Detached')
     if (isDirty.value) return t('Machine.UpdatePanel.Dirty')
     if (!isValid.value) return t('Machine.UpdatePanel.Invalid')
-    if (['python', 'web'].includes(type.value)) {
+    if (isSemverType.value) {
         if (semverUpdatable.value) return t('Machine.UpdatePanel.Update')
         else if (localVersion.value === null || remoteVersion.value === null)
             return t('Machine.UpdatePanel.Unknown')
