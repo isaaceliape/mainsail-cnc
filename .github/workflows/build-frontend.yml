@@ -29,6 +29,10 @@ jobs:
       - name: Build
         run: bun run build
 
+      - name: Write version.json into dist
+        run: |
+          echo "{\"buildTime\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"commit\":\"${{ github.sha }}\"}" > dist/version.json
+
       - name: Create dist archive
         run: |
           cp ./remote/* ./dist/ 2>/dev/null || true

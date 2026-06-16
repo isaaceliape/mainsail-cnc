@@ -30,8 +30,9 @@ if curl -sfL "$ZIP_URL" -o "$ZIP_FILE" && [[ -s "$ZIP_FILE" ]]; then
 
     unzip -oq "$ZIP_FILE" -d "$WEB_ROOT"
 
-    # Write version stamp
-    echo "{\"buildTime\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"commit\":\"$(git -C "$REPO_ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown)\"}" > "$WEB_ROOT/version.json"
+    if [[ ! -f "$WEB_ROOT/version.json" ]]; then
+        echo "{\"buildTime\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"commit\":\"$(git -C "$REPO_ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown)\"}" > "$WEB_ROOT/version.json"
+    fi
 
     echo "    extracted to $WEB_ROOT"
 
