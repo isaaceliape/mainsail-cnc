@@ -52,3 +52,5 @@ jobs:
       - run: bun install --frozen-lockfile
 
       - run: bun run test:unit
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
