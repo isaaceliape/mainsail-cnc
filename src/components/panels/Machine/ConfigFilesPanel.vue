@@ -207,7 +207,12 @@
                 </v-row>
             </v-card-text>
         </panel>
-        <v-menu v-model="contextMenu.shown" :target="[contextMenu.x, contextMenu.y]" location="bottom start" origin="top left" :offset="4">
+        <v-menu
+            v-model="contextMenu.shown"
+            :target="[contextMenu.x, contextMenu.y]"
+            location="bottom start"
+            origin="top left"
+            :offset="4">
             <v-list>
                 <v-list-item v-if="!contextMenu.item.isDirectory" @click="clickRow(contextMenu.item, true)">
                     <v-icon class="mr-1">{{ mdiFileDocumentEditOutline }}</v-icon>
@@ -487,6 +492,11 @@
     color: rgb(var(--v-theme-on-surface));
     opacity: 1;
 }
+
+:deep(.files-table .v-table__wrapper > table > thead > tr > th:first-child),
+:deep(.files-table .v-table__wrapper > table > tbody > tr > td:first-child) {
+    padding-left: 16px !important;
+}
 </style>
 
 <script setup lang="ts">
@@ -503,7 +513,6 @@ import {
     generateTimestamp,
     getFileColor,
     getFileIcon,
-    getFileType,
     getFileTypeLabel,
     sortFiles,
 } from '@/plugins/helpers'
@@ -585,7 +594,7 @@ interface draggingFile {
 const store = useStore()
 const { t } = useI18n()
 const socket = useSocket()
-const { apiUrl, isMobile, formatDateTime } = useBase()
+const { apiUrl, formatDateTime } = useBase()
 const { machineButtonCol } = useTheme()
 const toast = useToast()
 

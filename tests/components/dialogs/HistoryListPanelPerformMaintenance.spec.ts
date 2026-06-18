@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createStore } from 'vuex'
+import type { GuiMaintenanceStateEntry } from '@/store/gui/maintenance/types'
 import HistoryListPanelPerformMaintenance from '@/components/dialogs/HistoryListPanelPerformMaintenance.vue'
 
 vi.mock('@/composables/useSocket', () => ({
@@ -112,7 +113,7 @@ function createMockItem(overrides: Record<string, any> = {}) {
             date: { bool: false, value: null },
         },
         ...overrides,
-    }
+    } as GuiMaintenanceStateEntry
 }
 
 describe('HistoryListPanelPerformMaintenance.vue', () => {

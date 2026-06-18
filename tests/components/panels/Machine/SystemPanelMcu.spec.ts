@@ -55,12 +55,15 @@ const mcuBase = {
     name: 'mcu',
     chip: 'rp2040',
     version: 'v0.12.0-123',
-    load: 0.02,
-    awake: 1234.567,
+    load: '0.02',
+    awake: '1234.567',
     freq: 250000000,
     freqFormat: '250 MHz',
     loadPercent: 2,
     loadProgressColor: 'primary',
+    mcu_constants: { dummy: 0 },
+    last_stats: { dummy: 0 },
+    tempSensor: { temperature: 0, measured_min_temp: null, measured_max_temp: null },
 }
 
 const mcuWithTempSensor = {
@@ -178,7 +181,7 @@ describe('SystemPanelMcu.vue', () => {
 
     it('does not render frequency when freq is null', () => {
         const wrapper = mount(SystemPanelMcu, {
-            props: { mcu: { ...mcuBase, freq: null, freqFormat: null } },
+            props: { mcu: { ...mcuBase, freq: null, freqFormat: null } as any },
             global: {
                 mocks: { $t: (key: string) => key },
             },
@@ -211,7 +214,7 @@ describe('SystemPanelMcu.vue', () => {
 
     it('does not render temp when tempSensor is absent', () => {
         const wrapper = mount(SystemPanelMcu, {
-            props: { mcu: { ...mcuBase, tempSensor: null } },
+            props: { mcu: { ...mcuBase, tempSensor: null } as any },
             global: {
                 mocks: { $t: (key: string) => key },
             },

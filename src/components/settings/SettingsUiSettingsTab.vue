@@ -246,7 +246,6 @@ import { computed, watch } from 'vue'
 import { useStore } from 'vuex'
 import { useI18n } from 'vue-i18n'
 import { useBase } from '@/composables/useBase'
-import { useTheme } from '@/composables/useTheme'
 import SettingsRow from '@/components/settings/SettingsRow.vue'
 import { defaultLogoColor, defaultPrimaryColor, themes } from '@/store/variables'
 import { mdiRestart, mdiTimerOutline } from '@mdi/js'
@@ -257,7 +256,6 @@ import type { ColorPickerValue } from '@/plugins/helpers'
 const store = useStore()
 const { t } = useI18n()
 const { isMobile } = useBase()
-const { theme } = useTheme()
 
 const mode = computed({
     get: () => store.state.gui.uiSettings.mode,
@@ -307,10 +305,6 @@ const logoColor = computed({
         store.dispatch('gui/saveSetting', { name: 'uiSettings.logo', value: newVal })
     },
 })
-
-const defaultLogoColorValue = computed(() => theme.value?.colorLogo ?? defaultLogoColor)
-
-const defaultPrimaryColorValue = computed(() => theme.value?.colorPrimary ?? defaultPrimaryColor)
 
 const primaryColor = computed({
     get: () => store.state.gui.uiSettings.primary,

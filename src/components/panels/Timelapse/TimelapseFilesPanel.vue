@@ -187,7 +187,12 @@
                 </template>
             </v-data-table>
         </panel>
-        <v-menu v-model="contextMenu.shown" :target="[contextMenu.x, contextMenu.y]" location="bottom start" origin="top left" :offset="4">
+        <v-menu
+            v-model="contextMenu.shown"
+            :target="[contextMenu.x, contextMenu.y]"
+            location="bottom start"
+            origin="top left"
+            :offset="4">
             <v-list>
                 <v-list-item v-if="!contextMenu.item.isDirectory" @click="downloadFile(contextMenu.item.filename)">
                     <v-icon class="mr-1">{{ mdiCloudDownload }}</v-icon>
@@ -626,12 +631,6 @@ function showContextMenu(e: MouseEvent | LongpressEvent, item: FileStateFile) {
         contextMenu.item = item
         contextMenu.shown = true
     }
-}
-
-function existsFramesZip(item: FileStateFile) {
-    const posLastPoint = item.filename.lastIndexOf('.')
-    const zipFilename = item.filename.slice(0, posLastPoint) + '.zip'
-    return files.value.findIndex((file) => file.filename === zipFilename) !== -1
 }
 
 function downloadFile(filename: string) {

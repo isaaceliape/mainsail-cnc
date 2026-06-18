@@ -10,10 +10,8 @@ import {
     mdiConsoleLine,
     mdiDipSwitch,
     mdiEngine,
-    mdiGamepad,
     mdiGrid,
     mdiInformation,
-    mdiLedStrip,
     mdiThermometerLines,
     mdiWebcam,
     mdiAxisArrow,
@@ -24,7 +22,7 @@ import {
 export function useDashboard() {
     const store = useStore()
     const { t } = useI18n()
-    const base = useBase()
+    const { isMobile, isTablet, isDesktop, isWidescreen, viewport } = useBase()
 
     const macrogroups = computed(() => store.getters['gui/macros/getAllMacrogroups'] ?? [])
 
@@ -79,38 +77,38 @@ export function useDashboard() {
                 return mdiCodeTags
             case 'miscellaneous':
                 return mdiDipSwitch
-            case 'led-effects':
-                return mdiLedStrip
             case 'temperature':
                 return mdiThermometerLines
-            case 'miniconsole':
+            case 'console':
                 return mdiConsoleLine
-            case 'machine-settings':
+            case 'gcodefiles':
+                return mdiGrid
+            case 'spindle-coolant':
                 return mdiEngine
             case 'cnc-status':
-                return mdiAxisArrow
+                return mdiInformation
             case 'dro':
-                return mdiCrosshairsGps
+                return mdiAxisArrow
             case 'jog':
                 return mdiHandBackRight
             case 'wcs':
             case 'offsets':
             case 'offset-preview':
-                return mdiGrid
-            case 'spindle-coolant':
-                return mdiEngine
-            case 'mdi':
-                return mdiConsoleLine
+                return mdiCrosshairsGps
             default:
-                return mdiInformation
+                return ''
         }
     }
 
     return {
-        ...base,
         macrogroups,
         webcams,
         getPanelName,
         convertPanelnameToIcon,
+        isMobile,
+        isTablet,
+        isDesktop,
+        isWidescreen,
+        viewport, // viewport: mobile, tablet, desktop, widescreen
     }
 }

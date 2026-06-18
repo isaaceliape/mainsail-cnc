@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createStore } from 'vuex'
+import type { GuiMaintenanceStateEntry } from '@/store/gui/maintenance/types'
 import HistoryListPanelEditMaintenance from '@/components/dialogs/HistoryListPanelEditMaintenance.vue'
 
 vi.mock('@/composables/useSocket', () => ({
@@ -28,7 +29,8 @@ const vuetifyComponentsMock = vi.hoisted(() => ({
     VTextField: {
         name: 'VTextField',
         props: ['modelValue', 'rules', 'label', 'hideDetails', 'variant', 'dense'],
-        template: '<div><label v-if="label">{{ label }}</label><input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" /></div>',
+        template:
+            '<div><label v-if="label">{{ label }}</label><input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" /></div>',
     },
     VTextarea: {
         name: 'VTextarea',
@@ -71,7 +73,8 @@ vi.mock('@/components/settings/SettingsRow.vue', () => ({
     default: {
         name: 'SettingsRow',
         props: ['icon', 'title', 'subTitle'],
-        template: '<div class="settings-row"><div v-if="title">{{ title }}</div><div v-if="subTitle">{{ subTitle }}</div><slot /></div>',
+        template:
+            '<div class="settings-row"><div v-if="title">{{ title }}</div><div v-if="subTitle">{{ subTitle }}</div><slot /></div>',
     },
 }))
 
@@ -138,7 +141,7 @@ function createMockItem(overrides: Record<string, any> = {}) {
             date: { bool: false, value: null },
         },
         ...overrides,
-    }
+    } as GuiMaintenanceStateEntry
 }
 
 describe('HistoryListPanelEditMaintenance.vue', () => {
