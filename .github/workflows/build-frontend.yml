@@ -2,7 +2,7 @@ name: Build Frontend
 
 on:
   push:
-    branches: [develop]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -60,25 +60,25 @@ jobs:
           echo "---" >> nightly-notes.md
           echo "### Changelog" >> nightly-notes.md
           echo "" >> nightly-notes.md
-          PREV=$(git rev-parse --verify refs/tags/nightly 2>/dev/null || echo "")
+          PREV=$(git rev-parse --verify refs/tags/nightly-main 2>/dev/null || echo "")
           python3 scripts/_gen_changelog.py "$PREV" >> nightly-notes.md
 
       - name: Publish nightly release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if gh release view nightly >/dev/null 2>&1; then
+          if gh release view nightly-main >/dev/null 2>&1; then
             echo "Nightly release exists — updating in place"
-            gh release edit nightly \
-              --title "${{ steps.pkgver.outputs.VERSION }}-nightly (${{ steps.commit.outputs.SHA_SHORT }})" \
+            gh release edit nightly-main \
+              --title "${{ steps.pkgver.outputs.VERSION }}-nightly-main (${{ steps.commit.outputs.SHA_SHORT }})" \
               --notes-file nightly-notes.md \
-              --target "${{ github.sha }}"
-            gh release upload nightly mainsail-cnc-${{ steps.pkgver.outputs.VERSION }}.zip --clobber
+              --target main
+            gh release upload nightly-main mainsail-cnc-${{ steps.pkgver.outputs.VERSION }}.zip --clobber
           else
             echo "No existing nightly release — creating fresh"
-            gh release create nightly \
-              --title "${{ steps.pkgver.outputs.VERSION }}-nightly (${{ steps.commit.outputs.SHA_SHORT }})" \
+            gh release create nightly-main \
+              --title "${{ steps.pkgver.outputs.VERSION }}-nightly-main (${{ steps.commit.outputs.SHA_SHORT }})" \
               --notes-file nightly-notes.md \
-              --target "${{ github.sha }}" \
+              --target main \
               mainsail-cnc-${{ steps.pkgver.outputs.VERSION }}.zip
           fi
