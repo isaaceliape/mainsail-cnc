@@ -15,10 +15,10 @@
 
         <v-menu
             v-model="showContextMenu"
-            :position-x="showContextMenuX"
-            :position-y="showContextMenuY"
-            absolute
-            offset-y>
+            :target="contextMenuTarget"
+            location="bottom start"
+            origin="top left"
+            :offset="4">
             <v-list>
                 <v-list-item @click="showRenameDirectoryDialog = true">
                     <v-icon class="mr-1">{{ mdiRenameBox }}</v-icon>
@@ -42,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import type { LongpressEvent } from '@/directives/longpress'
 import { useGcodeFiles } from '@/composables/useGcodeFiles'
 import { useSocket } from '@/composables/useSocket'
@@ -62,6 +62,7 @@ const socket = useSocket()
 const showContextMenu = ref(false)
 const showContextMenuX = ref(0)
 const showContextMenuY = ref(0)
+const contextMenuTarget = computed(() => [showContextMenuX.value, showContextMenuY.value] as [number, number])
 
 const showRenameDirectoryDialog = ref(false)
 const showDeleteDirectoryDialog = ref(false)

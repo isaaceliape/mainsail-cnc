@@ -23,10 +23,11 @@
             </v-tooltip>
         </div>
 
+        <div class="gcode-card__thumb">
+            <gcodefiles-thumbnail :item="item" variant="card" />
+        </div>
+
         <div class="gcode-card__body">
-            <div class="gcode-card__thumb">
-                <gcodefiles-thumbnail :item="item" />
-            </div>
             <div class="gcode-card__info">
                 <div class="gcode-card__name" :title="item.filename">{{ item.filename }}</div>
                 <div class="gcode-card__sub">
@@ -95,8 +96,10 @@
 
         <v-menu
             v-model="showContextMenu"
-            :position-x="showContextMenuX"
-            :position-y="showContextMenuY">
+            :target="contextMenuTarget"
+            location="bottom start"
+            origin="top left"
+            :offset="4">
             <v-list>
                 <v-list-item v-if="isGcodeFile" :disabled="!canStart" @click="showStartPrintDialog = true">
                     <v-icon class="mr-1">{{ mdiPlay }}</v-icon>
@@ -225,6 +228,7 @@ const cncMetadataRequestId = ref(0)
 const showContextMenu = ref(false)
 const showContextMenuX = ref(0)
 const showContextMenuY = ref(0)
+const contextMenuTarget = computed(() => [showContextMenuX.value, showContextMenuY.value] as [number, number])
 
 const showStartPrintDialog = ref(false)
 const showAddBatchToQueueDialog = ref(false)
@@ -393,27 +397,23 @@ onBeforeUnmount(() => {
     margin-left: auto;
 }
 
-.gcode-card__body {
-    display: flex;
-    gap: 12px;
-    padding: 12px 12px 12px 12px;
-    min-height: 88px;
-}
-
 .gcode-card__thumb {
-    flex: 0 0 72px;
-    width: 72px;
-    height: 72px;
+    width: 100%;
+    aspect-ratio: 4 / 3;
     display: flex;
     align-items: center;
     justify-content: center;
     background: rgba(var(--v-theme-on-surface), 0.04);
-    border-radius: 4px;
+    border-top: 1px solid rgba(var(--v-theme-on-surface), 0.05);
+    border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.05);
     overflow: hidden;
 }
 
+.gcode-card__body {
+    padding: 12px;
+}
+
 .gcode-card__info {
-    flex: 1 1 auto;
     min-width: 0;
     display: flex;
     flex-direction: column;

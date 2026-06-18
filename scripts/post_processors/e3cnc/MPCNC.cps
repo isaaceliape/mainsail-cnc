@@ -841,6 +841,17 @@ function WriteInformation() {
   WriteComment(eComment.Info, " Notes:");
   writeSetupNotes();
   WriteComment(eComment.Info, " ");
+
+  var workpiece = getWorkpiece();
+  var stockDelta = Vector.diff(workpiece.upper, workpiece.lower);
+  if (stockDelta.isNonZero()) {
+    WriteComment(eComment.Info, " Stock Box:");
+    WriteComment(eComment.Info, "   X: Min=" + xyzFormat.format(workpiece.lower.x) + " Max=" + xyzFormat.format(workpiece.upper.x) + " Size=" + xyzFormat.format(workpiece.upper.x - workpiece.lower.x));
+    WriteComment(eComment.Info, "   Y: Min=" + xyzFormat.format(workpiece.lower.y + properties.yOffset) + " Max=" + xyzFormat.format(workpiece.upper.y + properties.yOffset) + " Size=" + xyzFormat.format(workpiece.upper.y - workpiece.lower.y));
+    WriteComment(eComment.Info, "   Z: Min=" + xyzFormat.format(workpiece.lower.z) + " Max=" + xyzFormat.format(workpiece.upper.z) + " Size=" + xyzFormat.format(workpiece.upper.z - workpiece.lower.z));
+    WriteComment(eComment.Info, " ");
+  }
+
   WriteComment(eComment.Info, " Ranges Table:");
   WriteComment(eComment.Info, "   X: Min=" + xyzFormat.format(ranges.x.min) + " Max=" + xyzFormat.format(ranges.x.max) + " Size=" + xyzFormat.format(ranges.x.max - ranges.x.min));
   WriteComment(eComment.Info, "   Y: Min=" + xyzFormat.format(ranges.y.min + properties.yOffset) + " Max=" + xyzFormat.format(ranges.y.max + properties.yOffset) + " Size=" + xyzFormat.format(ranges.y.max - ranges.y.min));

@@ -152,27 +152,48 @@ def extract_envelope(gcode_path: str) -> Optional[Dict[str, float]]:
     }
 
 
-def extract_stock_from_ranges(head: str) -> Optional[Dict[str, float]]:
-    """Parse the Ranges Table comment block from Fusion CAM gcode headers.
+def extract_axis_table(head: str, title: str) -> Optional[Dict[str, Dict[str, float]]]:
+    pattern = re.compile(
+        rf"^;\s*{re.escape(title)}:\s*$\n((?:^;\s+[XYZ]:\s+Min=[^\n]+$\n?){{1,3}})",
+        re.MULTILINE,
+    )
+    match = pattern.search(head)
+    if not match:
+        return None
 
-    Format:
-        ;   X: Min=10.356 Max=138.698 Size=128.342
-        ;   Y: Min=-91.759 Max=-61.76 Size=29.998
-        ;   Z: Min=18.6 Max=32 Size=13.4
-    """
-    axes = {}
+    axes: Dict[str, Dict[str, float]] = {}
+    block = match.group(1)
     for axis in ("X", "Y", "Z"):
-        m = re.search(
+        line_match = re.search(
             rf"^;\s+{axis}:\s+Min=([+-]?\d*\.?\d+)\s+Max=([+-]?\d*\.?\d+)\s+Size=([+-]?\d*\.?\d+)",
-            head,
+            block,
             re.MULTILINE,
         )
-        if m:
+        if line_match:
             axes[axis.lower()] = {
-                "min": round(float(m.group(1)), 3),
-                "max": round(float(m.group(2)), 3),
-                "size": round(float(m.group(3)), 3),
+                "min": round(float(line_match.group(1)), 3),
+                "max": round(float(line_match.group(2)), 3),
+                "size": round(float(line_match.group(3)), 3),
             }
+
+    return axes or None
+
+
+def extract_stock_from_ranges(head: str) -> Optional[Dict[str, float]]:
+    """Parse stock information from the Fusion header.
+
+    Preferred format emitted by our post processor:
+        ; Stock Box:
+        ;   X: Min=0 Max=165 Size=165
+        ;   Y: Min=-165 Max=0 Size=165
+        ;   Z: Min=0 Max=13.4 Size=13.4
+
+    Legacy fallback is the Fusion Ranges Table, which often reflects only the
+    machined extents rather than the actual stock body.
+    """
+    axes = extract_axis_table(head, "Stock Box")
+    if not axes:
+        axes = extract_axis_table(head, "Ranges Table")
     if not axes:
         return None
     result = {
@@ -243,69 +264,146 @@ def extract_feeds(head: str) -> Dict[str, float]:
     return feeds
 
 
-def collect_toolpath(gcode_path: str) -> List[Tuple[float, float, float]]:
-    """Collect G0/G1 move coordinates from the gcode file."""
-    path: List[Tuple[float, float, float]] = []
-    move_re = re.compile(r"^G[01]\b")
+def determine_cut_threshold(z_values: List[float], stock: Optional[Dict[str, Any]]) -> Optional[float]:
+    if stock:
+        stock_z = stock.get("z") or {}
+        if isinstance(stock_z, dict) and stock_z.get("max") is not None:
+            return float(stock_z["max"])
+
+    if not z_values:
+        return None
+
+    if any(z < -0.001 for z in z_values) and any(z > 0.001 for z in z_values):
+        return 0.0
+
+    return max(z_values)
+
+
+def collect_toolpath(gcode_path: str, stock: Optional[Dict[str, Any]] = None) -> List[Tuple[float, float, float, float]]:
+    """Collect XY line segments where the tool is actually cutting material."""
+    segments: List[Tuple[float, float, float, float, float, float]] = []
+    move_re = re.compile(r"^(G0?[01])\b")
     coord_re = re.compile(r"\b([XYZ])([+-]?\d*\.?\d+)")
+    position = {"X": 0.0, "Y": 0.0, "Z": 0.0}
+    absolute_mode = True
+    z_values = [0.0]
+
     with open(gcode_path, "r", errors="replace") as f:
-        for i, line in enumerate(f):
+        for i, raw_line in enumerate(f):
             if i > MOVE_SAMPLE_LIMIT * 5:
                 break
-            if not move_re.match(line):
+
+            line = raw_line.split(";", 1)[0].strip()
+            if not line:
                 continue
+            if line.startswith("G90"):
+                absolute_mode = True
+                continue
+            if line.startswith("G91"):
+                absolute_mode = False
+                continue
+
+            move = move_re.match(line)
+            if not move:
+                continue
+
             coords = {axis: float(val) for axis, val in coord_re.findall(line)}
             if not coords:
                 continue
-            path.append((coords.get("X", 0), coords.get("Y", 0), coords.get("Z", 0)))
-    return path
+
+            start = position.copy()
+            target = position.copy()
+            for axis, value in coords.items():
+                target[axis] = value if absolute_mode else target[axis] + value
+
+            z_values.append(target["Z"])
+
+            if move.group(1).upper() in {"G1", "G01"} and (
+                target["X"] != start["X"] or target["Y"] != start["Y"]
+            ):
+                segments.append((start["X"], start["Y"], start["Z"], target["X"], target["Y"], target["Z"]))
+
+            position = target
+
+    cut_threshold = determine_cut_threshold(z_values, stock)
+    if cut_threshold is None:
+        return []
+
+    cut_segments: List[Tuple[float, float, float, float]] = []
+    for x1, y1, z1, x2, y2, z2 in segments:
+        if min(z1, z2) < cut_threshold - 1e-4:
+            cut_segments.append((x1, y1, x2, y2))
+    return cut_segments
+
+
+def extract_stock_xy_bounds(stock: Optional[Dict[str, Any]]) -> Optional[Tuple[float, float, float, float]]:
+    if not stock:
+        return None
+
+    stock_x = stock.get("x") or {}
+    stock_y = stock.get("y") or {}
+    if not isinstance(stock_x, dict) or not isinstance(stock_y, dict):
+        return None
+
+    x_min = stock_x.get("min")
+    x_max = stock_x.get("max")
+    y_min = stock_y.get("min")
+    y_max = stock_y.get("max")
+    if None in (x_min, x_max, y_min, y_max):
+        return None
+
+    return float(x_min), float(x_max), float(y_min), float(y_max)
 
 
 def render_toolpath_thumbnail(
-    toolpath: List[Tuple[float, float, float]],
+    toolpath: List[Tuple[float, float, float, float]],
     envelope: Optional[Dict[str, float]],
+    stock: Optional[Dict[str, Any]] = None,
     size: int = THUMB_SIZE,
 ) -> Optional[bytes]:
-    """Render a top-down (XY) toolpath preview as a PNG byte array."""
+    """Render a top-down (XY) cutting-path preview as a PNG byte array."""
     if Image is None or not toolpath:
         return None
 
-    # Determine bounds from envelope or toolpath
-    if envelope:
+    stock_bounds = extract_stock_xy_bounds(stock)
+
+    if stock_bounds:
+        x_min, x_max, y_min, y_max = stock_bounds
+    elif envelope:
         x_min, x_max = envelope["x_min"], envelope["x_max"]
         y_min, y_max = envelope["y_min"], envelope["y_max"]
     else:
-        xs = [p[0] for p in toolpath]
-        ys = [p[1] for p in toolpath]
+        xs = [p[0] for p in toolpath] + [p[2] for p in toolpath]
+        ys = [p[1] for p in toolpath] + [p[3] for p in toolpath]
         x_min, x_max = min(xs), max(xs)
         y_min, y_max = min(ys), max(ys)
 
     range_x = x_max - x_min or 1
     range_y = y_max - y_min or 1
-    padding = max(range_x, range_y) * 0.05 or 1
+    padding = max(range_x, range_y) * 0.08 or 1
 
     def to_screen(x: float, y: float) -> Tuple[float, float]:
         sx = (x - x_min + padding) / (range_x + 2 * padding) * (size - 4) + 2
         sy = (y - y_min + padding) / (range_y + 2 * padding) * (size - 4) + 2
-        # Flip Y for screen coords
         return (sx, size - sy)
 
-    img = Image.new("RGB", (size, size), (35, 35, 35))
+    img = Image.new("RGB", (size, size), (28, 28, 28))
     draw = ImageDraw.Draw(img)
 
-    # Draw work envelope outline
-    if envelope:
-        x1, y1 = to_screen(x_min, y_min)
-        x2, y2 = to_screen(x_max, y_max)
-        draw.rectangle([x1, y2, x2, y1], outline=(60, 60, 60), width=1)
+    outline_bounds = stock_bounds
+    if outline_bounds is None and envelope:
+        outline_bounds = (envelope["x_min"], envelope["x_max"], envelope["y_min"], envelope["y_max"])
 
-    # Draw toolpath
-    prev = toolpath[0]
-    for point in toolpath[1:]:
-        sx1, sy1 = to_screen(prev[0], prev[1])
-        sx2, sy2 = to_screen(point[0], point[1])
-        draw.line([sx1, sy1, sx2, sy2], fill=(76, 175, 80), width=1)
-        prev = point
+    if outline_bounds:
+        ox1, ox2, oy1, oy2 = outline_bounds
+        sx1, sy1 = to_screen(ox1, oy1)
+        sx2, sy2 = to_screen(ox2, oy2)
+        draw.rectangle([sx1, sy2, sx2, sy1], fill=(36, 36, 36), outline=(90, 90, 90), width=1)
+
+    for x1, y1, x2, y2 in toolpath:
+        sx1, sy1 = to_screen(x1, y1)
+        sx2, sy2 = to_screen(x2, y2)
+        draw.line([sx1, sy1, sx2, sy2], fill=(96, 220, 120), width=1)
 
     buf = BytesIO()
     img.save(buf, format="PNG")
@@ -440,9 +538,9 @@ def process(gcode_path: str, force: bool = False) -> int:
     # Generate and embed toolpath thumbnail
     try:
         envelope = meta.get("work_envelope")
-        toolpath = collect_toolpath(gcode_path)
+        toolpath = collect_toolpath(gcode_path, meta.get("stock"))
         if toolpath:
-            thumb_data = render_toolpath_thumbnail(toolpath, envelope)
+            thumb_data = render_toolpath_thumbnail(toolpath, envelope, meta.get("stock"))
             if thumb_data:
                 embed_thumbnail(gcode_path, thumb_data)
                 log.info(

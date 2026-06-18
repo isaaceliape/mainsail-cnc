@@ -72,7 +72,6 @@ import { useGcodeFiles } from '@/composables/useGcodeFiles'
 import { useSocket } from '@/composables/useSocket'
 import { useToast } from 'vue-toast-notification'
 import { mdiCloudDownload, mdiDelete, mdiFolderPlus, mdiMagnify, mdiRefresh, mdiUpload } from '@mdi/js'
-import type { FileStateFile } from '@/store/files/types'
 import { escapePath, generateTimestamp } from '@/plugins/helpers'
 import ConfirmationDialog from '@/components/dialogs/ConfirmationDialog.vue'
 import GcodefilesCreateDirectoryDialog from '@/components/dialogs/GcodefilesCreateDirectoryDialog.vue'
@@ -96,42 +95,29 @@ const gcodeInputFileAccept = computed(() => {
     return validGcodeExtensions
 })
 
+const selectedFilePaths = computed(() =>
+    (selectedFiles.value ?? []).filter((item): item is string => typeof item === 'string' && item.length > 0)
+)
+
 const deleteSelectedText = computed(() => {
-    if (selectedFiles.value.length === 1) {
-        return t('Files.DeleteSingleFileQuestion', { name: selectedFiles.value[0].filename }).toString()
+    if (selectedFilePaths.value.length === 1) {
+        return t('Files.DeleteSingleFileQuestion', { name: basename(selectedFilePaths.value[0]) }).toString()
     }
-    return t('Files.DeleteSelectedQuestion', { count: selectedFiles.value.length }).toString()
+    return t('Files.DeleteSelectedQuestion', { count: selectedFilePaths.value.length }).toString()
 })
 
 function downloadSelectedFiles() {
-    if (selectedFiles.value.length === 1) {
-        const filepath = `${currentPath.value}/${selectedFiles.value[0].filename}`
+    if (selectedFilePaths.value.length === 1) {
+        const filepath = selectedFilePaths.value[0].replace(/^gcodes/, '')
         const href = `${apiUrl.value}/server/files/gcodes${escapePath(filepath)}`
         window.open(href)
         setSelectedFiles([])
         return
     }
 
-    const items: string[] = []
-
-    const addElementToItems = (absolutPath: string, directory: FileStateFile[]) => {
-        for (const file of directory) {
-            const filePath = `${absolutPath}/${escapePath(file.filename)}`
-
-            if (file.isDirectory && file.childrens) {
-                addElementToItems(filePath, file.childrens)
-                continue
-            }
-
-            items.push(filePath)
-        }
-    }
-
-    addElementToItems('gcodes/' + currentPath.value, selectedFiles.value)
-
     socket.emit(
         'server.files.zip',
-        { items, dest: `config/gcodes-${generateTimestamp()}.zip` },
+        { items: selectedFilePaths.value, dest: `config/gcodes-${generateTimestamp()}.zip` },
         { action: 'files/downloadZip', loading: 'gcodeDownloadZip' }
     )
 
@@ -172,24 +158,16 @@ function refreshFileList() {
 }
 
 function deleteSelectedFiles(): void {
-    selectedFiles.value.forEach((item) => {
-        if (item.isDirectory) {
-            socket.emit(
-                'server.files.delete_directory',
-                { path: 'gcodes' + currentPath.value + '/' + item.filename, force: true },
-                { action: 'files/getDeleteDir' }
-            )
-            return
-        }
-
-        socket.emit(
-            'server.files.delete_file',
-            { path: 'gcodes' + currentPath.value + '/' + item.filename },
-            { action: 'files/getDeleteFile' }
-        )
+    selectedFilePaths.value.forEach((path) => {
+        socket.emit('server.files.delete_file', { path }, { action: 'files/getDeleteFile' })
     })
 
     setSelectedFiles([])
+}
+
+function basename(path: string) {
+    const parts = path.split('/')
+    return parts[parts.length - 1] || path
 }
 </script>
 

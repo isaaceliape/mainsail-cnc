@@ -25,17 +25,34 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useStore } from 'vuex'
 import { useGcodeFiles } from '@/composables/useGcodeFiles'
+import type { FileStateGcodefile } from '@/store/files/types'
 import GcodefilesPanelListCardBack from '@/components/panels/Gcodefiles/GcodefilesPanelListCardBack.vue'
 import GcodefilesPanelListCardDirectory from '@/components/panels/Gcodefiles/GcodefilesPanelListCardDirectory.vue'
 import GcodefilesPanelListCardFile from '@/components/panels/Gcodefiles/GcodefilesPanelListCardFile.vue'
 import { mdiFolderOpen } from '@mdi/js'
 
+const store = useStore()
 const { currentPath, files, selectedFiles, setSelectedFiles } = useGcodeFiles()
 
 const directories = computed(() => files.value.filter((file) => file.isDirectory))
 
-const filesOnly = computed(() => files.value.filter((file) => !file.isDirectory))
+const filesOnly = computed(() => {
+    const output = files.value.filter((file) => !file.isDirectory) as FileStateGcodefile[]
+    const requestItems = output.filter((file) => !file.metadataRequested && !file.metadataPulled)
+
+    if (requestItems.length) {
+        store.dispatch(
+            'files/requestMetadata',
+            requestItems.map((file) => ({
+                filename: 'gcodes/' + file.full_filename,
+            }))
+        )
+    }
+
+    return output
+})
 
 const hasContent = computed(() => directories.value.length > 0 || filesOnly.value.length > 0)
 

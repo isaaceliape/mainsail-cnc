@@ -1,32 +1,33 @@
 <template>
     <v-icon v-if="item.isDirectory">{{ mdiFolder }}</v-icon>
     <v-tooltip
-        v-else-if="smallThumbnailUrl"
+        v-else-if="showTooltip"
         location="top"
         content-class="tooltip__content-opacity1"
         :color="bigThumbnailTooltipColor"
-        :disabled="!bigThumbnailUrl">
-        <template #activator="{ props }">
-            <vue-load-image>
-                <template #image>
-                    <img :src="smallThumbnailUrl" width="32" height="32" :alt="item.filename" v-bind="props" />
-                </template>
-                <template #preloader>
-                    <v-progress-circular indeterminate color="primary" />
-                </template>
-                <template #error>
-                    <v-icon>{{ mdiFile }}</v-icon>
-                </template>
-            </vue-load-image>
+        :disabled="!bigThumbnailUrl || bigThumbnailFailed">
+        <template #activator="{ props: activatorProps }">
+            <img
+                :src="displayThumbnailUrl"
+                :alt="item.filename"
+                :class="thumbnailClass"
+                v-bind="activatorProps"
+                @error="handleDisplayError" />
         </template>
-        <span>
-            <img :src="bigThumbnailUrl" width="250" :alt="item.filename" />
+        <span v-if="bigThumbnailUrl && !bigThumbnailFailed">
+            <img :src="bigThumbnailUrl" width="250" :alt="item.filename" @error="bigThumbnailFailed = true" />
         </span>
     </v-tooltip>
-    <v-icon v-else>{{ mdiFile }}</v-icon>
+    <img
+        v-else-if="displayThumbnailUrl && !displayThumbnailFailed"
+        :src="displayThumbnailUrl"
+        :alt="item.filename"
+        :class="thumbnailClass"
+        @error="handleDisplayError" />
+    <v-icon v-else :class="thumbnailFallbackClass">{{ mdiFile }}</v-icon>
 </template>
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch, withDefaults } from 'vue'
 import { useStore } from 'vuex'
 import { useBase } from '@/composables/useBase'
 import type { FileStateGcodefile } from '@/store/files/types'
@@ -34,12 +35,21 @@ import { mdiFile, mdiFolder } from '@mdi/js'
 import { defaultBigThumbnailBackground, thumbnailBigMin, thumbnailSmallMax, thumbnailSmallMin } from '@/store/variables'
 import { escapePath } from '@/plugins/helpers'
 
-const props = defineProps<{
-    item: FileStateGcodefile
-}>()
+const props = withDefaults(
+    defineProps<{
+        item: FileStateGcodefile
+        variant?: 'icon' | 'card'
+    }>(),
+    {
+        variant: 'icon',
+    }
+)
 
 const store = useStore()
 const { apiUrl } = useBase()
+
+const smallThumbnailFailed = ref(false)
+const bigThumbnailFailed = ref(false)
 
 const bigThumbnailBackground = computed(
     () => store.state.gui.uiSettings.bigThumbnailBackground ?? defaultBigThumbnailBackground
@@ -58,9 +68,11 @@ const fileTimestamp = computed(() =>
 
 const thumbnails = computed(() => props.item.thumbnails ?? [])
 
+const fullFilename = computed(() => props.item.full_filename ?? props.item.filename)
+
 const subdirectory = computed(() => {
-    if (!props.item.full_filename.includes('/')) return null
-    return escapePath(props.item.full_filename.substring(0, props.item.full_filename.lastIndexOf('/')))
+    if (!fullFilename.value.includes('/')) return null
+    return escapePath(fullFilename.value.substring(0, fullFilename.value.lastIndexOf('/')))
 })
 
 const smallThumbnail = computed(() =>
@@ -85,6 +97,44 @@ const bigThumbnailUrl = computed(() => {
     return buildUrl(bigThumbnail.value.relative_path)
 })
 
+const displayThumbnailUrl = computed(() =>
+    props.variant === 'card' ? bigThumbnailUrl.value ?? smallThumbnailUrl.value : smallThumbnailUrl.value
+)
+
+const displayThumbnailFailed = computed(() =>
+    props.variant === 'card' ? bigThumbnailFailed.value && smallThumbnailFailed.value : smallThumbnailFailed.value
+)
+
+const showTooltip = computed(
+    () => props.variant === 'icon' && !!smallThumbnailUrl.value && !smallThumbnailFailed.value
+)
+
+const thumbnailClass = computed(() => [
+    'gcode-thumbnail',
+    props.variant === 'card' ? 'gcode-thumbnail--card' : 'gcode-thumbnail--icon',
+])
+
+const thumbnailFallbackClass = computed(() => [
+    props.variant === 'card' ? 'gcode-thumbnail-fallback gcode-thumbnail-fallback--card' : '',
+])
+
+watch([smallThumbnailUrl, bigThumbnailUrl], () => {
+    smallThumbnailFailed.value = false
+    bigThumbnailFailed.value = false
+})
+
+function handleDisplayError() {
+    if (props.variant === 'card') {
+        if (displayThumbnailUrl.value === bigThumbnailUrl.value && bigThumbnailUrl.value && !bigThumbnailFailed.value) {
+            bigThumbnailFailed.value = true
+            return
+        }
+        smallThumbnailFailed.value = true
+        return
+    }
+    smallThumbnailFailed.value = true
+}
+
 function buildUrl(relativePath: string) {
     const baseArray = [apiUrl.value, 'server/files/gcodes']
     if (subdirectory.value !== null) {
@@ -97,3 +147,33 @@ function buildUrl(relativePath: string) {
     return `${baseUrl}?timestamp=${fileTimestamp.value}`
 }
 </script>
+
+<style scoped>
+.gcode-thumbnail {
+    display: block;
+}
+
+.gcode-thumbnail--icon {
+    width: 32px;
+    height: 32px;
+}
+
+.gcode-thumbnail--card {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.gcode-thumbnail-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gcode-thumbnail-fallback--card {
+    width: 100%;
+    height: 100%;
+    font-size: 48px;
+    color: rgba(var(--v-theme-on-surface), 0.35);
+}
+</style>
