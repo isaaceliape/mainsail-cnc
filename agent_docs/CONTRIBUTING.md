@@ -2,7 +2,7 @@
 
 ## Git Workflow
 
-Submit PRs against `develop` branch (not `master`).
+Submit PRs against `main` branch.
 
 Sign off commits with DCO:
 

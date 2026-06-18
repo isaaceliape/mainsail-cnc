@@ -303,7 +303,7 @@ else
             printf 'channel: %s\n' "$CNC_CHANNEL"
             printf 'path: %s\n' "$REMOTE_REPO_DIR"
             printf 'origin: %s\n' "$CNC_REPO_URL"
-            printf 'primary_branch: develop\n'
+            printf 'primary_branch: main\n'
             printf 'enable_node_updates: False\n'
             printf 'is_system_service: False\n'
             printf 'info_tags:\n'

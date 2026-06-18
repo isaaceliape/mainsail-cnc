@@ -1,7 +1,7 @@
 # mainsail-cnc
 
-[![Build Frontend](https://github.com/isaaceliape/mainsail-cnc/actions/workflows/build-frontend.yml/badge.svg?branch=develop)](https://github.com/isaaceliape/mainsail-cnc/actions/workflows/build-frontend.yml)
-[![CI](https://github.com/isaaceliape/mainsail-cnc/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/isaaceliape/mainsail-cnc/actions/workflows/ci.yml)
+[![Build Frontend](https://github.com/isaaceliape/mainsail-cnc/actions/workflows/build-frontend.yml/badge.svg?branch=main)](https://github.com/isaaceliape/mainsail-cnc/actions/workflows/build-frontend.yml)
+[![CI](https://github.com/isaaceliape/mainsail-cnc/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/isaaceliape/mainsail-cnc/actions/workflows/ci.yml)
 
 CNC-focused control stack for Klipper + Moonraker, forked from [Mainsail](https://github.com/mainsail-prusa/mainsail). DRO, jog, WCS offsets, spindle & coolant, MDI, and CAM metadata — all native, no plugins required.
 

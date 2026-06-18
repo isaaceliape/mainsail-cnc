@@ -2,7 +2,7 @@
 repo:
   url: https://github.com/isaaceliape/mainsail-cnc.git
   dest: '{{ ansible_env.HOME }}/mainsail-cnc'
-  branch: develop
+  branch: main
 
 frontend:
   web_root: '{{ ansible_env.HOME }}/mainsail'

@@ -4,7 +4,7 @@ This file documents the current state and capabilities of AI agents used in this
 
 ## Vue 2 → Vue 3 Migration Status
 
-**Branch**: `vue3-migration` (parallel to `develop`)
+**Branch**: `vue3-migration` (parallel to `main`)
 
 ### Complete
 
@@ -70,7 +70,7 @@ d5e768fc phase2: global infrastructure for Vue 3
 
 ## Ansible Migration (complete)
 
-**Branch**: `develop` (parallel to `vue3-migration`)
+**Branch**: `main` (parallel to `vue3-migration`)
 
 Replaced the bash-based `install_to_moonraker.sh` / `uninstall.sh` / `deploy.sh`
 with Ansible playbooks for idempotent deployment.
@@ -87,7 +87,7 @@ with Ansible playbooks for idempotent deployment.
 Plus fixes discovered during rollout:
 
 - **Nightly CI releases**: `.github/workflows/build-frontend.yml` builds on every
-  push to `develop` and publishes `mainsail-cnc-<version>.zip` (semver) as a `nightly` GitHub release.
+  push to `main` and publishes `mainsail-cnc-<version>.zip` (semver) as a `nightly-main` GitHub release.
   Low-RAM devices (32-bit ARM) download the pre-built zip instead of running `vite build`.
 - **`post_update_script`**: Moonraker update manager now runs `scripts/post_update.sh`
   after every `git pull`, which downloads the nightly release, re-vendors the agent,
@@ -117,7 +117,7 @@ a9144473 spec: add Ansible migration plan
 - **Package Manager**: Bun (not npm). Use `bun install`, `bun run`, `bunx`.
 - **Dev Server**: Run within `tmux`; check for existing sessions first. HMR is active.
 - **Ansible**: Playbooks at `ansible/playbooks/`. Run `ansible-playbook ansible/playbooks/install.yml` for full install.
-- **CI**: Every push to develop triggers a nightly release with pre-built frontend. Check status with `gh run list`.
+- **CI**: Every push to main triggers a nightly release with pre-built frontend. Check status with `gh run list`.
 
 ## Operational Guidelines
 
