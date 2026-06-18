@@ -75,7 +75,6 @@ export interface GuiState {
             axis_maximum: number[] | null
         }
         showGCodePanel: boolean
-        cncMode: boolean
     }
     macros?: GuiMacrosState
     navigationSettings: GuiNavigationState

@@ -281,7 +281,6 @@
     },
     "GCodeViewer": {
         "ClearLoadedFile": "Fjern",
-        "CNCMode": "CNC Mode",
         "ColorMode": "Farvevisning",
         "Downloading": "Downloader",
         "ForceLineRendering": "Gennemtving Linje Rendering",

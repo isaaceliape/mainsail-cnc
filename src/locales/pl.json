@@ -250,7 +250,6 @@
     },
     "GCodeViewer": {
         "ClearLoadedFile": "Wyczyść",
-        "CNCMode": "Tryb CNC",
         "ColorMode": "Tryb koloru",
         "Downloading": "Pobieranie",
         "ForceLineRendering": "Wymuszanie renderowania linii",

@@ -294,7 +294,6 @@
     },
     "GCodeViewer": {
         "ClearLoadedFile": "Vymazat",
-        "CNCMode": "Režim CNC",
         "ColorMode": "Režim barev",
         "Downloading": "Stahování",
         "ForceLineRendering": "Vynutit vykreslování čar",

@@ -263,7 +263,6 @@
     },
     "GCodeViewer": {
         "ClearLoadedFile": "Effacer",
-        "CNCMode": "Mode CNC",
         "ColorMode": "Mode couleur",
         "Downloading": "Téléchargement",
         "ForceLineRendering": "Rendu de la ligne de force",

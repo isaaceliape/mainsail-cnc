@@ -299,7 +299,6 @@
     },
     "GCodeViewer": {
         "ClearLoadedFile": "Počisti",
-        "CNCMode": "CNC način",
         "ColorMode": "Barvni način",
         "Downloading": "Prenos...",
         "ForceLineRendering": "Priliži upodabljanje črt",

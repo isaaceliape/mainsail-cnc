@@ -184,13 +184,6 @@
                                                 hide-details
                                                 :label="$t('GCodeViewer.SpecularLighting')" />
                                         </v-list-item>
-                                        <v-list-item class="minHeight36">
-                                            <v-checkbox
-                                                v-model="cncMode"
-                                                class="mt-0"
-                                                hide-details
-                                                :label="$t('GCodeViewer.CNCMode')" />
-                                        </v-list-item>
                                     </v-list>
                                 </v-menu>
                             </v-col>
@@ -480,14 +473,14 @@ async function viewerInit(element: HTMLCanvasElement) {
     }
 
     viewer.gcodeProcessor.useHighQualityExtrusion(hdRendering.value)
-    viewer.gcodeProcessor.updateForceWireMode(forceLineRendering.value || cncMode.value)
+    viewer.gcodeProcessor.updateForceWireMode(true)
     viewer.gcodeProcessor.setAlpha(transparency.value)
     viewer.gcodeProcessor.setVoxelMode(voxelMode.value)
     viewer.gcodeProcessor.voxelWidth = voxelWidth.value
     viewer.gcodeProcessor.voxelHeight = voxelHeight.value
     viewer.gcodeProcessor.useSpecularColor(specularLighting.value)
     viewer.gcodeProcessor.setLiveTracking(false)
-    viewer.gcodeProcessor.g1AsExtrusion = cncMode.value
+    viewer.gcodeProcessor.g1AsExtrusion = true
     viewer.buildObjects.objectCallback = objectCallback
 
     loadToolColors(extruderColors.value)
@@ -785,7 +778,7 @@ const forceLineRendering = computed({
 watch(forceLineRendering, async (newVal: boolean) => {
     if (viewer === null) return
 
-    viewer.gcodeProcessor.updateForceWireMode(newVal || cncMode.value)
+    viewer.gcodeProcessor.updateForceWireMode(true)
     await reloadViewer()
 })
 
@@ -844,18 +837,6 @@ watch(specularLighting, async (newVal: boolean) => {
     if (viewer === null) return
 
     viewer.gcodeProcessor.useSpecularColor(newVal)
-})
-
-const cncMode = computed({
-    get: () => store.state.gui.gcodeViewer.cncMode,
-    set: (newVal) => {
-        store.dispatch('gui/saveSetting', { name: 'gcodeViewer.cncMode', value: newVal })
-        if (viewer === null) return
-
-        viewer.gcodeProcessor.g1AsExtrusion = newVal
-        viewer.gcodeProcessor.updateForceWireMode(forceLineRendering.value || newVal)
-        reloadViewer()
-    },
 })
 
 const extruderColors = computed(() => store.state.gui.gcodeViewer?.extruderColors ?? false)

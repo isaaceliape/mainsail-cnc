@@ -293,7 +293,6 @@
     },
     "GCodeViewer": {
         "ClearLoadedFile": "Kitakarít",
-        "CNCMode": "CNC mód",
         "ColorMode": "Színes Mód",
         "Downloading": "Letöltés",
         "ForceLineRendering": "Vonalas renderelés Erőltetése",

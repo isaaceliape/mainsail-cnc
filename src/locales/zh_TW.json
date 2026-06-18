@@ -251,7 +251,6 @@
     },
     "GCodeViewer": {
         "ClearLoadedFile": "清除",
-        "CNCMode": "CNC模式",
         "ColorMode": "顏色模式",
         "Downloading": "下載中",
         "ForceLineRendering": "Force Line Rendering",

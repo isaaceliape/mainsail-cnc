@@ -281,7 +281,6 @@
     },
     "GCodeViewer": {
         "ClearLoadedFile": "Очистити",
-        "CNCMode": "Режим ЧПД",
         "ColorMode": "Кольоровий Режим",
         "Downloading": "Завантаження",
         "ForceLineRendering": "Примусова лінійна Візуалізація",

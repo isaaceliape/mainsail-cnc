@@ -249,7 +249,6 @@
     },
     "GCodeViewer": {
         "ClearLoadedFile": "Temizle",
-        "CNCMode": "CNC Modu",
         "ColorMode": "Renk modu",
         "Downloading": "İndiriliyor",
         "ForceLineRendering": "Çizgi İşlemeyi Zorla",

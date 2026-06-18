@@ -298,7 +298,6 @@
     },
     "GCodeViewer": {
         "ClearLoadedFile": "Löschen",
-        "CNCMode": "CNC Modus",
         "ColorMode": "Farbmodus",
         "Downloading": "Downloaden",
         "ForceLineRendering": "Erzwinge Liniendarstellung",

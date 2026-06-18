@@ -100,7 +100,6 @@ const defaultState = (overrides: Partial<GuiState> = {}): any => ({
         specularLighting: false,
         klipperCache: { kinematics: null, axis_minimum: null, axis_maximum: null },
         showGCodePanel: false,
-        cncMode: true,
     },
     navigationSettings: { entries: [] },
     uiSettings: {

@@ -293,7 +293,6 @@
     },
     "GCodeViewer": {
         "ClearLoadedFile": "Очистить",
-        "CNCMode": "Режим ЧПУ",
         "ColorMode": "Тип отображения",
         "Downloading": "Загрузка",
         "ForceLineRendering": "Принудительный рендеринг линий",

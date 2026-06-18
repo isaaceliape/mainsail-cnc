@@ -235,7 +235,6 @@
     },
     "GCodeViewer": {
         "ClearLoadedFile": "초기화",
-        "CNCMode": "CNC 모드",
         "ColorMode": "컬러 모드",
         "Downloading": "정보 다운로딩 중..",
         "ForceLineRendering": "Force line 랜더링",

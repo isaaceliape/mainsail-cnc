@@ -300,7 +300,6 @@
     },
     "GCodeViewer": {
         "ClearLoadedFile": "Clear",
-        "CNCMode": "CNC Mode",
         "ColorMode": "Color Mode",
         "Downloading": "Downloading",
         "ForceLineRendering": "Force Line Rendering",

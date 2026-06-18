@@ -277,7 +277,6 @@
     },
     "GCodeViewer": {
         "ClearLoadedFile": "Leeg",
-        "CNCMode": "CNC Modus",
         "ColorMode": "Kleur modus",
         "Downloading": "Downloaden",
         "ForceLineRendering": "Forceer Line Rendering",

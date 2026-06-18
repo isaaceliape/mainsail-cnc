@@ -235,7 +235,6 @@
     },
     "GCodeViewer": {
         "ClearLoadedFile": "クリア",
-        "CNCMode": "CNCモード",
         "ColorMode": "カラーモード",
         "Downloading": "ダウンロード中",
         "ForceLineRendering": "強制ラインレンダリング",
