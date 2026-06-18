@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { actions } from '@/store/printer/actions'
 import type { PrinterState } from '@/store/printer/types'
 
@@ -85,6 +85,7 @@ describe('printer actions', () => {
     })
 
     it('initSubscripts fetches objects, subscribes, and requests temp history', async () => {
+        vi.useFakeTimers()
         mockSocket.emitAndWait
             .mockResolvedValueOnce({ objects: ['toolhead', 'extruder', 'menu', 'gcode_macro START_PRINT'] })
             .mockResolvedValueOnce({ status: { extruder: { temperature: 200 } } })
@@ -102,12 +103,18 @@ describe('printer actions', () => {
             {}
         )
         expect(dispatch).toHaveBeenCalledWith('getData', { status: { extruder: { temperature: 200 } } })
+
+        // Advance timers to fire initExtruderCanExtrude
+        vi.advanceTimersByTime(200)
+        expect(dispatch).toHaveBeenCalledWith('initExtruderCanExtrude')
+
         expect(mockSocket.emit).toHaveBeenCalledWith(
             'server.temperature_store',
             { include_monitors: true },
             { action: 'printer/tempHistory/init' }
         )
         expect(dispatch).toHaveBeenCalledWith('socket/removeInitModule', 'printer/initSubscripts', { root: true })
+        vi.useRealTimers()
     })
 
     it('initSubscripts handles empty subscribe list', async () => {

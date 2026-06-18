@@ -597,6 +597,213 @@ describe('printer getters', () => {
         })
     })
 
+    describe('getFans', () => {
+        it('returns fans from state with controllable flag', () => {
+            state['fan_generic hotend_fan'] = { speed: 0.8 as any }
+            state.fan = { speed: 0.5 as any }
+            state.configfile = { config: {}, settings: {} } as any
+            const result = (getters as any).getFans(state, { getPrinterObjects: (getters as any).getPrinterObjects(state) } as any)
+            expect(result).toHaveLength(2)
+            // Sorted alphabetically by name: 'fan' before 'hotend_fan'
+            expect(result[0].name).toBe('fan')
+            expect(result[0].controllable).toBe(true)
+            expect(result[0].speed).toBe(0.5)
+            expect(result[1].name).toBe('hotend_fan')
+            expect(result[1].controllable).toBe(true)
+            expect(result[1].speed).toBe(0.8)
+        })
+
+        it('returns empty array when no fans', () => {
+            const result = (getters as any).getFans(state, { getPrinterObjects: () => [] })
+            expect(result).toEqual([])
+        })
+    })
+
+    describe('getMiscellaneous', () => {
+        it('returns sorted miscellaneous objects', () => {
+            state['output_pin my_pin'] = { value: 0.5 as any }
+            state.configfile = {
+                config: {},
+                settings: { 'output_pin my_pin': { pwm: true, off_below: 0.1, max_power: 0.9 } },
+            } as any
+            const result = (getters as any).getMiscellaneous(state)
+            expect(result).toHaveLength(1)
+            expect(result[0].name).toBe('my_pin')
+            expect(result[0].controllable).toBe(true)
+            expect(result[0].pwm).toBe(true)
+            expect(result[0].off_below).toBe(0.1)
+            expect(result[0].max_power).toBe(0.9)
+        })
+
+        it('returns pwm_tool and pwm_cycle_time with pwm=true', () => {
+            state['pwm_tool my_tool'] = { value: 0.3 as any }
+            state.configfile = { config: {}, settings: { 'pwm_tool my_tool': {} } } as any
+            const result = (getters as any).getMiscellaneous(state)
+            expect(result).toHaveLength(1)
+            expect(result[0].pwm).toBe(true)
+            expect(result[0].controllable).toBe(true)
+        })
+
+        it('handles fan objects with scale 255', () => {
+            state['fan part_fan'] = { speed: 0.5 as any, rpm: 3000 }
+            state.configfile = { config: {}, settings: { 'fan part_fan': {} } } as any
+            const result = (getters as any).getMiscellaneous(state)
+            expect(result).toHaveLength(1)
+            expect(result[0].scale).toBe(255)
+            expect(result[0].rpm).toBe(3000)
+        })
+
+        it('returns empty array when no matching objects', () => {
+            expect((getters as any).getMiscellaneous(state)).toEqual([])
+        })
+    })
+
+    describe('getMiscellaneousSensors', () => {
+        it('returns load_cell with force_g value', () => {
+            state['load_cell cell1'] = { force_g: 150, value: 0.5, unit: 'g' } as any
+            const result = (getters as any).getMiscellaneousSensors(state)
+            expect(result).toHaveLength(1)
+            expect(result[0].name).toBe('cell1')
+            expect(result[0].value).toBe(150)
+            expect(result[0].unit).toBe('g')
+        })
+
+        it('returns empty array when no sensors', () => {
+            expect((getters as any).getMiscellaneousSensors(state)).toEqual([])
+        })
+    })
+
+    describe('getMcus', () => {
+        it('returns parsed MCU objects with version and load', () => {
+            state.mcu = {
+                mcu_version: 'v0.12.0-123-gabc',
+                mcu_constants: { MCU: 'rp2040' },
+                last_stats: {
+                    mcu_task_avg: 0.001,
+                    mcu_task_stddev: 0.0001,
+                    freq: 250000000,
+                    mcu_awake: 4.5,
+                },
+            } as any
+            const result = (getters as any).getMcus(state, getters)
+            expect(result).toHaveLength(1)
+            expect(result[0].name).toBe('mcu')
+            expect(result[0].chip).toBe('rp2040')
+            expect(result[0].version).toBe('v0.12.0-123-gabc')
+            expect(result[0].loadPercent).toBeLessThan(100)
+            expect(result[0].loadProgressColor).toBe('primary')
+        })
+
+        it('handles non-Klipper app', () => {
+            state.mcu = {
+                app: 'DangerKlipper',
+                mcu_version: 'v1.0.0-xyz',
+                mcu_constants: { MCU: 'esp32' },
+                last_stats: {},
+            } as any
+            const result = (getters as any).getMcus(state, getters)
+            expect(result[0].version).toContain('DangerKlipper')
+        })
+
+        it('shows error color when load > 0.95', () => {
+            state.mcu = {
+                last_stats: { mcu_task_avg: 0.01, mcu_task_stddev: 0.008, freq: 1000000, mcu_awake: 5 },
+                mcu_constants: { MCU: 'rp2040' },
+            } as any
+            const result = (getters as any).getMcus(state, getters)
+            expect(result[0].loadPercent).toBe(100)
+            expect(result[0].loadProgressColor).toBe('error')
+        })
+
+        it('returns empty array when no mcus', () => {
+            expect((getters as any).getMcus(state, getters)).toEqual([])
+        })
+    })
+
+    describe('getHostTempSensor', () => {
+        it('returns temperature from rpi_temperature sensor', () => {
+            state['temperature_sensor rpi'] = { temperature: 45.2, measured_min_temp: 30, measured_max_temp: 50 } as any
+            state.configfile = {
+                settings: { 'temperature_sensor rpi': { sensor_type: 'rpi_temperature' } },
+            } as any
+            const result = (getters as any).getHostTempSensor(
+                state,
+                { getPrinterConfigObjects: (getters as any).getPrinterConfigObjects(state) }
+            )
+            expect(result).not.toBeNull()
+            expect(result!.temperature).toBe('45')
+        })
+
+        it('returns null when no host temp sensor', () => {
+            state.configfile = { settings: {} } as any
+            const result = (getters as any).getHostTempSensor(
+                state,
+                { getPrinterConfigObjects: (getters as any).getPrinterConfigObjects(state) }
+            )
+            expect(result).toBeNull()
+        })
+    })
+
+    describe('getMcuTempSensors and getMcuTempSensor', () => {
+        it('getMcuTempSensors returns mcu temperature sensors', () => {
+            state['temperature_sensor mcu_temp'] = { temperature: 35 } as any
+            state.configfile = {
+                settings: {
+                    'temperature_sensor mcu_temp': {
+                        sensor_type: 'temperature_mcu',
+                        sensor_mcu: 'mcu',
+                    },
+                },
+            } as any
+            const result = (getters as any).getMcuTempSensors(
+                state,
+                { getPrinterConfigObjects: (getters as any).getPrinterConfigObjects(state) }
+            )
+            expect(result).toHaveLength(1)
+            expect(result[0].key).toBe('temperature_sensor mcu_temp')
+            expect(result[0].settings.sensor_mcu).toBe('mcu')
+        })
+
+        it('getMcuTempSensor returns formatted temp for matching mcu', () => {
+            state['temperature_sensor mcu_temp'] = { temperature: 35, measured_min_temp: 30, measured_max_temp: 40 } as any
+            state.configfile = {
+                settings: {
+                    'temperature_sensor mcu_temp': {
+                        sensor_type: 'temperature_mcu',
+                        sensor_mcu: 'mcu',
+                    },
+                },
+            } as any
+            const sensors = (getters as any).getMcuTempSensors(
+                state,
+                { getPrinterConfigObjects: (getters as any).getPrinterConfigObjects(state) }
+            )
+            const moduleGetters = { getMcuTempSensors: sensors }
+            const result = (getters as any).getMcuTempSensor(
+                state,
+                moduleGetters
+            )('mcu')
+            expect(result).not.toBeNull()
+            expect(result!.temperature).toBe('35')
+            expect(result!.measured_min_temp).toBe('30.0')
+            expect(result!.measured_max_temp).toBe('40.0')
+        })
+
+        it('getMcuTempSensor returns null when no matching sensor', () => {
+            const result = (getters as any).getMcuTempSensor(state, { getMcuTempSensors: [] })('nonexistent')
+            expect(result).toBeNull()
+        })
+
+        it('getMcuTempSensors returns empty when no settings', () => {
+            state.configfile = { settings: null } as any
+            const result = (getters as any).getMcuTempSensors(
+                state,
+                { getPrinterConfigObjects: (getters as any).getPrinterConfigObjects(state) }
+            )
+            expect(result).toEqual([])
+        })
+    })
+
     describe('getEstimatedTimeETAFormat', () => {
         it('formats time in 12-hour mode with AM/PM', () => {
             vi.setSystemTime(new Date(2024, 0, 1, 10, 0, 0))

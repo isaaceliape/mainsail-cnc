@@ -41,6 +41,13 @@ describe('printer mutations', () => {
         expect(state.app_name).toBeNull()
     })
 
+    it('setData deeply merges nested objects with multiple subkeys', () => {
+        state.heaters = { available_heaters: ['extruder'], available_sensors: [] }
+        mutations.setData(state, { heaters: { available_sensors: ['extruder'] } })
+        expect(state.heaters.available_heaters).toEqual(['extruder'])
+        expect(state.heaters.available_sensors).toEqual(['extruder'])
+    })
+
     it('clearCurrentFile resets current_file to empty object', () => {
         state.current_file = { filename: 'test.gcode' } as any
         mutations.clearCurrentFile(state)
