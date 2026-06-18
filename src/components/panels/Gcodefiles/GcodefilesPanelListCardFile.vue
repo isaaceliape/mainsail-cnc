@@ -96,9 +96,7 @@
         <v-menu
             v-model="showContextMenu"
             :position-x="showContextMenuX"
-            :position-y="showContextMenuY"
-            absolute
-            offset-y>
+            :position-y="showContextMenuY">
             <v-list>
                 <v-list-item v-if="isGcodeFile" :disabled="!canStart" @click="showStartPrintDialog = true">
                     <v-icon class="mr-1">{{ mdiPlay }}</v-icon>
