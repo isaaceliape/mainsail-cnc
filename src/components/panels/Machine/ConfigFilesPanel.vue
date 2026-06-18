@@ -207,7 +207,7 @@
                 </v-row>
             </v-card-text>
         </panel>
-        <v-menu v-model="contextMenu.shown" :position-x="contextMenu.x" :position-y="contextMenu.y" absolute offset-y>
+        <v-menu v-model="contextMenu.shown" :position-x="contextMenu.x" :position-y="contextMenu.y">
             <v-list>
                 <v-list-item v-if="!contextMenu.item.isDirectory" @click="clickRow(contextMenu.item, true)">
                     <v-icon class="mr-1">{{ mdiFileDocumentEditOutline }}</v-icon>

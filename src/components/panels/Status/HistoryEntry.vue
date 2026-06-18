@@ -46,7 +46,7 @@
                 <span>{{ statusName }}</span>
             </v-tooltip>
         </v-col>
-        <v-menu v-model="showContextMenu" :position-x="contextMenuX" :position-y="contextMenuY" absolute offset-y>
+        <v-menu v-model="showContextMenu" :position-x="contextMenuX" :position-y="contextMenuY">
             <v-list>
                 <v-list-item
                     v-if="job.exists && file"

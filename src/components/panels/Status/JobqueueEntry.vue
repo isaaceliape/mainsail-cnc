@@ -23,7 +23,7 @@
                 <v-icon>{{ mdiPlay }}</v-icon>
             </v-btn>
         </v-col>
-        <v-menu v-model="showContextMenu" :position-x="contextMenuX" :position-y="contextMenuY" absolute offset-y>
+        <v-menu v-model="showContextMenu" :position-x="contextMenuX" :position-y="contextMenuY">
             <v-list>
                 <v-list-item @click="printJob">
                     <v-icon class="mr-1">{{ mdiPlay }}</v-icon>
