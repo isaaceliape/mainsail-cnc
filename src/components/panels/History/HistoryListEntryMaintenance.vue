@@ -45,7 +45,7 @@
             {{ formatDateTime(item.start_time * 1000, false) }}
         </td>
         <td :colspan="tableFields.length - 1" />
-        <v-menu v-model="contextMenuBool" :position-x="contextMenuX" :position-y="contextMenuY" absolute offset-y>
+        <v-menu v-model="contextMenuBool" :position-x="contextMenuX" :position-y="contextMenuY">
             <v-list>
                 <v-list-item @click="detailsDialogBool = true">
                     <v-icon class="mr-1">{{ mdiTextBoxSearch }}</v-icon>

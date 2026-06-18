@@ -187,7 +187,7 @@
                 </template>
             </v-data-table>
         </panel>
-        <v-menu v-model="contextMenu.shown" :position-x="contextMenu.x" :position-y="contextMenu.y" absolute offset-y>
+        <v-menu v-model="contextMenu.shown" :position-x="contextMenu.x" :position-y="contextMenu.y">
             <v-list>
                 <v-list-item v-if="!contextMenu.item.isDirectory" @click="downloadFile(contextMenu.item.filename)">
                     <v-icon class="mr-1">{{ mdiCloudDownload }}</v-icon>

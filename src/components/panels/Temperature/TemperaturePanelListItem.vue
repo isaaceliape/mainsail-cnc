@@ -57,7 +57,7 @@
             :additional-sensor-name="additionalSensorName"
             :icon="icon"
             :color="color" />
-        <v-menu v-model="showContextMenu" :position-x="contextMenuX" :position-y="contextMenuY" absolute offset-y>
+        <v-menu v-model="showContextMenu" :position-x="contextMenuX" :position-y="contextMenuY">
             <v-list>
                 <v-list-item v-if="isHeater" :disabled="!isHeaterActive" @click="turnOffHeater">
                     <v-icon start>{{ mdiSnowflake }}</v-icon>
