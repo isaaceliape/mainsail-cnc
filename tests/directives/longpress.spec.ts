@@ -192,4 +192,5 @@ describe('vLongpress', () => {
         vi.advanceTimersByTime(1200) // debounceTime (1000) + 200
         expect(document.body.style.userSelect).toBe('')
     })
+
 })

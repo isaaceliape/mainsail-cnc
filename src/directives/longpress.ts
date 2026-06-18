@@ -20,22 +20,16 @@ export const vLongpress: Directive<HTMLElement, LongpressBinding> = {
         }
 
         const debounceTime = Number(binding.arg ?? 1000)
-
-        const handler = (e: Partial<Touch> & { preventDefault: TouchEvent['preventDefault'] }) => {
-            resolveHandler(binding.value)(e)
-        }
-
-        let pressTimer: number | null = null
-        let startX = 0
-        let startY = 0
         const moveThreshold = 10
 
+        const pressTimer: { current: number | null } = { current: null }
+        const startPos = { x: 0, y: 0 }
+
         const start = (e: TouchEvent) => {
-            if (e.type === 'click') return
             if (!e.touches || e.touches.length < 1) return
 
-            startX = e.touches[0].clientX
-            startY = e.touches[0].clientY
+            startPos.x = e.touches[0].clientX
+            startPos.y = e.touches[0].clientY
 
             document
                 .querySelector('body')
@@ -45,9 +39,9 @@ export const vLongpress: Directive<HTMLElement, LongpressBinding> = {
                 document.querySelector('body')?.setAttribute('style', '')
             }, debounceTime + 200)
 
-            if (pressTimer === null) {
-                pressTimer = window.setTimeout(() => {
-                    handler({
+            if (pressTimer.current === null) {
+                pressTimer.current = window.setTimeout(() => {
+                    resolveHandler(binding.value)({
                         clientX: e.touches[0].clientX,
                         clientY: e.touches[0].clientY,
                         force: e.touches[0].force,
@@ -63,27 +57,26 @@ export const vLongpress: Directive<HTMLElement, LongpressBinding> = {
                     })
                 }, debounceTime)
             }
-            return false
         }
 
         const cancelOnMove = (e: TouchEvent) => {
-            if (pressTimer !== null && e.touches?.length) {
-                const dx = Math.abs(e.touches[0].clientX - startX)
-                const dy = Math.abs(e.touches[0].clientY - startY)
+            if (pressTimer.current !== null && e.touches?.length) {
+                const dx = Math.abs(e.touches[0].clientX - startPos.x)
+                const dy = Math.abs(e.touches[0].clientY - startPos.y)
                 if (dx < moveThreshold && dy < moveThreshold) return
             }
             cancel()
         }
 
         const cancel = () => {
-            if (pressTimer !== null) {
-                clearTimeout(pressTimer)
-                pressTimer = null
+            if (pressTimer.current !== null) {
+                clearTimeout(pressTimer.current)
+                pressTimer.current = null
             }
         }
 
         const preventDragDuringLongpress = (e: Event) => {
-            if (pressTimer !== null) e.preventDefault()
+            if (pressTimer.current !== null) e.preventDefault()
         }
 
         el.addEventListener('touchstart', start, { passive: true })
