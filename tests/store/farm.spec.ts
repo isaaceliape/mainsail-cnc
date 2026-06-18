@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { farm } from '@/store/farm'
 import { printer } from '@/store/farm/printer'
 import { getDefaultState as getFarmDefaultState } from '@/store/farm/index'
@@ -633,6 +633,197 @@ describe('farm printer store', () => {
             const sendObjCalls = dispatch.mock.calls.filter((c: any[]) => c[0] === 'sendObj')
             const mainsailCall = sendObjCalls.find((c: any[]) => c[1]?.params?.namespace === 'mainsail')
             expect(mainsailCall).toBeUndefined()
+        })
+
+        it('setSettings commits settings and dispatches gui update', () => {
+            const commit = vi.fn()
+            const dispatch = vi.fn()
+            const state = { ...getPrinterDefaultState(), _namespace: 'remote-1', settings: { speed: 100 } }
+
+            printer.actions.setSettings({ commit, dispatch, state } as any, { speed: 200, enabled: true })
+            expect(commit).toHaveBeenCalledWith('setSettings', { speed: 200, enabled: true })
+
+            // Simulate the mutation actually mutating state.settings
+            Object.assign(state.settings, { speed: 200, enabled: true })
+            expect(dispatch).toHaveBeenCalledWith(
+                'gui/remoteprinters/updateSettings',
+                { id: 'remote-1', values: { speed: 200, enabled: true } },
+                { root: true }
+            )
+        })
+
+        it('reconnect closes existing socket and reconnects', () => {
+            const close = vi.fn()
+            const dispatch = vi.fn()
+            const state = { ...getPrinterDefaultState(), socket: { ...getPrinterDefaultState().socket, instance: { close } } }
+
+            printer.actions.reconnect({ state, dispatch } as any)
+            expect(close).toHaveBeenCalled()
+            expect(dispatch).toHaveBeenCalledWith('connect')
+        })
+
+        it('sendObj does nothing when socket not open', () => {
+            const commit = vi.fn()
+            const state = { ...getPrinterDefaultState(), socket: { ...getPrinterDefaultState().socket, instance: { readyState: WebSocket.CLOSED } } }
+
+            printer.actions.sendObj({ state, commit } as any, { method: 'test', action: 'testAction' })
+            expect(commit).not.toHaveBeenCalled()
+        })
+
+        it('getObjectsList subscribes to allowed printer objects', () => {
+            const dispatch = vi.fn()
+            const payload = { objects: ['webhooks', 'toolhead', 'extruder', 'menu', 'unknown_object'] }
+
+            printer.actions.getObjectsList({ dispatch } as any, payload)
+            expect(dispatch).toHaveBeenCalledWith('sendObj', {
+                method: 'printer.objects.subscribe',
+                params: { objects: { webhooks: null, toolhead: null, extruder: null } },
+                action: 'getData',
+            })
+        })
+
+        it('getObjectsList handles empty objects list', () => {
+            const dispatch = vi.fn()
+            printer.actions.getObjectsList({ dispatch } as any, { objects: [] })
+            expect(dispatch).not.toHaveBeenCalled()
+        })
+
+        it('getData sets data and requests metadata when filename present', () => {
+            const commit = vi.fn()
+            const dispatch = vi.fn()
+            const payload = { status: { print_stats: { filename: 'test.gcode' }, toolhead: { position: [0, 0, 0] } } }
+
+            printer.actions.getData({ commit, dispatch } as any, payload)
+            expect(commit).toHaveBeenCalledWith('setData', { print_stats: { filename: 'test.gcode' }, toolhead: { position: [0, 0, 0] } })
+            expect(dispatch).toHaveBeenCalledWith('sendObj', {
+                method: 'server.files.metadata',
+                params: { filename: 'test.gcode' },
+                action: 'getMetadataCurrentFile',
+            })
+        })
+
+        it('getData handles non-status payload', () => {
+            const commit = vi.fn()
+            const dispatch = vi.fn()
+            const payload = { extruder: { temperature: 200 } }
+
+            printer.actions.getData({ commit, dispatch } as any, payload)
+            expect(commit).toHaveBeenCalledWith('setData', { extruder: { temperature: 200 } })
+            expect(dispatch).not.toHaveBeenCalled()
+        })
+
+        it('initPrinter dispatches object list and server requests', () => {
+            const commit = vi.fn()
+            const dispatch = vi.fn()
+            const state = {
+                ...getPrinterDefaultState(),
+                server: { klippy_connected: true },
+            }
+
+            printer.actions.initPrinter({ state, commit, dispatch } as any)
+            expect(dispatch).toHaveBeenCalledWith('sendObj', {
+                method: 'printer.objects.list',
+                action: 'getObjectsList',
+            })
+            expect(dispatch).toHaveBeenCalledWith('sendObj', {
+                method: 'server.files.list',
+                action: 'getConfigDir',
+                params: { root: 'config' },
+            })
+            expect(dispatch).toHaveBeenCalledWith('sendObj', {
+                method: 'server.database.list',
+                action: 'getDatabases',
+            })
+        })
+
+        it('initPrinter skips objects.list when klippy not connected', () => {
+            const commit = vi.fn()
+            const dispatch = vi.fn()
+            const state = {
+                ...getPrinterDefaultState(),
+                server: { klippy_connected: false },
+            }
+
+            printer.actions.initPrinter({ state, commit, dispatch } as any)
+            const sendObjCalls = dispatch.mock.calls.filter((c: any[]) => c[0] === 'sendObj')
+            const objectsListCall = sendObjCalls.find((c: any[]) => c[1]?.method === 'printer.objects.list')
+            expect(objectsListCall).toBeUndefined()
+        })
+
+        it('getStatus returns zero for missing print_stats', () => {
+            const localGetters = { getPrintPercent: 0.5 }
+            state.socket.isConnected = true
+            state.server.klippy_connected = true
+            expect((printer.getters as any).getStatus(state, localGetters)).toBe('Unknown')
+        })
+
+        it('getPrintPercent selects from gui setting', () => {
+            state.data.gui.general.calcPrintProgress = 'slicer'
+            const localGetters = {
+                getPrintPercentByFilepositionRelative: 0.1,
+                getPrintPercentBySlicer: 0.9,
+                getPrintPercentByFilament: 0.5,
+                getPrintPercentByFilepositionAbsolute: 0.3,
+            }
+            expect((printer.getters as any).getPrintPercent(state, localGetters)).toBe(0.9)
+        })
+
+        it('getPrintPercentByFilepositionRelative returns 0 when before gcode start', () => {
+            state.current_file = { filename: 'test.gcode', gcode_start_byte: 100, gcode_end_byte: 1000 } as any
+            state.data.print_stats = { filename: 'test.gcode' }
+            state.data.virtual_sdcard = { file_position: 50 }
+            expect((printer.getters as any).getPrintPercentByFilepositionRelative(state, {})).toBe(0)
+        })
+
+        it('getPrintPercentByFilepositionRelative returns 1 when past gcode end', () => {
+            state.current_file = { filename: 'test.gcode', gcode_start_byte: 100, gcode_end_byte: 1000 } as any
+            state.data.print_stats = { filename: 'test.gcode' }
+            state.data.virtual_sdcard = { file_position: 2000 }
+            expect((printer.getters as any).getPrintPercentByFilepositionRelative(state, {})).toBe(1)
+        })
+
+        it('getPrintPercentByFilament returns 0 for zero filament_total', () => {
+            state.data.print_stats = { filament_used: 0 } as any
+            state.current_file = { filament_total: 0 } as any
+            expect((printer.getters as any).getPrintPercentByFilament(state)).toBe(0)
+        })
+
+        it('getPrintPercentByFilament returns raw ratio (no capping)', () => {
+            state.data.print_stats = { filament_used: 500 } as any
+            state.current_file = { filament_total: 100 } as any
+            expect((printer.getters as any).getPrintPercentByFilament(state)).toBe(5)
+        })
+
+        it('getPrinterWebcams returns empty array when no webcams', () => {
+            expect((printer.getters as any).getPrinterWebcams(state)).toEqual([])
+        })
+
+        it('getPrintPercentByFilepositionRelative falls back on missing current_file', () => {
+            state.data.virtual_sdcard = { progress: 0.15 }
+            expect((printer.getters as any).getPrintPercentByFilepositionRelative(state, {})).toBe(0.15)
+        })
+
+        it('getSocketUrl uses ws or wss based on protocol', () => {
+            state.socket.protocol = 'ws'
+            state.socket.hostname = 'test.local'
+            state.socket.port = 7125
+            state.socket.path = '/printer'
+            expect((printer.getters as any).getSocketUrl(state)).toBe('ws://test.local:7125/printer/websocket')
+
+            state.socket.protocol = 'wss'
+            expect((printer.getters as any).getSocketUrl(state)).toBe('wss://test.local:7125/printer/websocket')
+        })
+
+        it('getSocketUrl handles leading/trailing slashes in path', () => {
+            state.socket.path = '/printer/'
+            state.socket.hostname = 'test.local'
+            state.socket.port = 7125
+            state.socket.protocol = 'ws'
+            expect((printer.getters as any).getSocketUrl(state)).toBe('ws://test.local:7125/printer/websocket')
+        })
+
+        it('getPosition returns empty array when no toolhead', () => {
+            expect((printer.getters as any).getPosition(state)).toEqual([])
         })
     })
 })

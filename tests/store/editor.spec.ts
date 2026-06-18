@@ -378,6 +378,32 @@ describe('editor store', () => {
             expect(mockToast.error).toHaveBeenCalled()
         })
 
+        it('openFile fires clearLoader after timeout', async () => {
+            const rootGetters = { 'socket/getUrl': 'http://localhost:7125' }
+            const actionState = { ...getDefaultState(), cancelToken: null }
+
+            const axios = await import('axios')
+
+            // Wrap the axios.get mock so we can capture when the .finally fires
+            vi.mocked(axios.default.get).mockResolvedValue({ data: { text: () => Promise.resolve('file content') } })
+
+            await (actions.openFile as any)(
+                { state: actionState, commit, dispatch, rootGetters },
+                { root: 'config', path: '', filename: 'test.cfg', permissions: 'rw', size: 1024 }
+            )
+
+            // After the promise chain resolves, the finally() has queued a setTimeout
+            // Give the microtask queue time to flush
+            await new Promise((resolve) => setImmediate?.(resolve) ?? setTimeout(resolve, 0))
+
+            // The finally callback calls setTimeout(() => dispatch('clearLoader'), 100)
+            // Without fake timers, this will fire after 100ms real time
+            // Instead, we can verify the setTimeout was queued by checking dispatch
+            // will eventually be called
+            await new Promise((resolve) => setTimeout(resolve, 150))
+            expect(dispatch).toHaveBeenCalledWith('clearLoader')
+        })
+
         it('openFile cancels existing load if cancelToken exists', async () => {
             const cancelFn = vi.fn()
             const rootGetters = { 'socket/getUrl': 'http://localhost:7125' }
