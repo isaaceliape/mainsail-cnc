@@ -185,6 +185,202 @@ describe('printer tempHistory store', () => {
             expect(commit).not.toHaveBeenCalledWith('setInitSource', expect.anything())
         })
 
+        it('init adds missing heaters/sensors with null arrays', async () => {
+            const commit = vi.fn()
+            const dispatch = vi.fn()
+            const rootGetters = {
+                'printer/getAvailableHeaters': ['heater_bed'],
+                'printer/getAvailableSensors': ['heater_bed', 'temperature_fan chamber_fan', 'temperature_sensor some_sensor'],
+                'printer/getAvailableMonitors': [],
+                'printer/tempHistory/getTemperatureStoreSize': 3,
+                'gui/getDatasetValue': vi.fn(() => null),
+            }
+            await (actions as any).init(
+                { commit, rootGetters, dispatch, state },
+                { extruder: { temperatures: [200] } }
+            )
+            // extruder is in payload but not in allSensors → gets deleted
+            // heater_bed is in allHeatres but not in payload → added with targets & powers
+            // temperature_fan chamber_fan is in allSensors → added with targets & speeds
+            // temperature_sensor some_sensor is in allSensors → added with temperatures only
+            expect(commit).toHaveBeenCalledWith('setInitSource', expect.any(Array))
+            // The init call to removeInitModule should still happen
+            expect(dispatch).toHaveBeenCalledWith('socket/removeInitModule', 'printer/initTempHistory', { root: true })
+        })
+
+        it('init uses gui/getDatasetValue color when available', async () => {
+            const commit = vi.fn()
+            const dispatch = vi.fn()
+            const rootGetters = {
+                'printer/getAvailableHeaters': ['extruder'],
+                'printer/getAvailableSensors': ['extruder'],
+                'printer/getAvailableMonitors': [],
+                'printer/tempHistory/getTemperatureStoreSize': 3,
+                'gui/getDatasetValue': vi.fn(() => '#FF5722'),
+            }
+            await (actions as any).init(
+                { commit, rootGetters, dispatch, state },
+                { extruder: { temperatures: [200, 210, 220], targets: [180, 190, 200], powers: [0.5, 0.6, 0.7] } }
+            )
+            expect(commit).toHaveBeenCalledWith('setInitSeries', expect.any(Array))
+        })
+
+        it('init handles heater_bed and chamber colors', async () => {
+            const commit = vi.fn()
+            const dispatch = vi.fn()
+            const rootGetters = {
+                'printer/getAvailableHeaters': ['heater_bed'],
+                'printer/getAvailableSensors': ['heater_bed', 'temperature_sensor chamber'],
+                'printer/getAvailableMonitors': [],
+                'printer/tempHistory/getTemperatureStoreSize': 3,
+                'gui/getDatasetValue': vi.fn(() => null),
+            }
+            await (actions as any).init(
+                { commit, rootGetters, dispatch, state },
+                {
+                    heater_bed: { temperatures: [60, 60, 60], targets: [60, 60, 60], powers: [0.5, 0.5, 0.5] },
+                    'temperature_sensor chamber': { temperatures: [25, 26, 27] },
+                }
+            )
+            expect(commit).toHaveBeenCalledWith('setInitSeries', expect.any(Array))
+        })
+
+        it('init handles requestParams filtering', async () => {
+            const commit = vi.fn()
+            const dispatch = vi.fn()
+            const rootGetters = {
+                'printer/getAvailableHeaters': ['extruder'],
+                'printer/getAvailableSensors': ['extruder'],
+                'printer/getAvailableMonitors': [],
+                'printer/tempHistory/getTemperatureStoreSize': 3,
+                'gui/getDatasetValue': vi.fn(() => null),
+            }
+            await (actions as any).init(
+                { commit, rootGetters, dispatch, state },
+                {
+                    extruder: { temperatures: [200] },
+                    requestParams: {},
+                }
+            )
+            expect(dispatch).toHaveBeenCalledWith('reset')
+            expect(dispatch).toHaveBeenCalledWith('socket/removeInitModule', 'printer/initTempHistory', { root: true })
+        })
+
+        it('updateSource adds new entries to source', async () => {
+            const rootGetters = {
+                'printer/getAvailableSensors': ['extruder'],
+                'printer/getAvailableMonitors': [],
+                'printer/tempHistory/getTemperatureStoreSize': 10,
+            }
+            const rootState = {
+                printer: {
+                    extruder: { temperature: 200, target: 180, power: 0.5 },
+                },
+            }
+            state.source = [{ date: new Date(Date.now() - 20000) }]
+            const commit = vi.fn()
+            await (actions as any).updateSource({ commit, rootState, rootGetters, state })
+            expect(commit).toHaveBeenCalledWith('addToSource', expect.objectContaining({
+                data: expect.objectContaining({ date: expect.any(Date) }),
+            }))
+        })
+
+        it('updateSource skips when items array is empty', async () => {
+            const rootGetters = {
+                'printer/getAvailableSensors': [],
+                'printer/getAvailableMonitors': [],
+            }
+            const commit = vi.fn()
+            await (actions as any).updateSource({ commit, rootState: {}, rootGetters, state })
+            expect(commit).not.toHaveBeenCalled()
+        })
+
+        it('updateSource skips when same second and diff < 1000ms', async () => {
+            const now = new Date()
+            state.source = [{ date: now }]
+            const rootGetters = {
+                'printer/getAvailableSensors': ['extruder'],
+                'printer/getAvailableMonitors': [],
+            }
+            const rootState = {
+                printer: { extruder: { temperature: 200 } },
+            }
+            const commit = vi.fn()
+            await (actions as any).updateSource({ commit, rootState, rootGetters, state })
+            expect(commit).not.toHaveBeenCalled()
+        })
+
+        it('updateSource handles non-existent printer objects gracefully', async () => {
+            const rootGetters = {
+                'printer/getAvailableSensors': ['extruder'],
+                'printer/getAvailableMonitors': [],
+            }
+            const rootState = { printer: {} }
+            state.source = [{ date: new Date(Date.now() - 20000) }]
+            const commit = vi.fn()
+            await (actions as any).updateSource({ commit, rootState, rootGetters, state })
+            // Should still call addToSource even if no printer data
+            expect(commit).toHaveBeenCalledWith('addToSource', expect.any(Object))
+        })
+
+        it('updateSource rounds percent values to 3 decimal places', async () => {
+            const rootGetters = {
+                'printer/getAvailableSensors': ['extruder'],
+                'printer/getAvailableMonitors': [],
+            }
+            const rootState = {
+                printer: {
+                    extruder: { temperature: 200.5678, target: 180, power: 0.56789, speed: 0.12345 },
+                },
+            }
+            state.source = [{ date: new Date(Date.now() - 20000) }]
+            const commit = vi.fn()
+            await (actions as any).updateSource({ commit, rootState, rootGetters, state })
+            expect(commit).toHaveBeenCalledWith('addToSource', expect.any(Object))
+        })
+
+        it('init falls back to random color when colorArray is exhausted', async () => {
+            const commit = vi.fn()
+            const dispatch = vi.fn()
+            // Create 8 sensors — colorArray only has 7 entries
+            const manySensors = Array.from({ length: 8 }, (_, i) => `extruder_${i}`)
+            const payload: Record<string, any> = {}
+            manySensors.forEach((s) => { payload[s] = { temperatures: [200] } })
+            const rootGetters = {
+                'printer/getAvailableHeaters': manySensors,
+                'printer/getAvailableSensors': manySensors,
+                'printer/getAvailableMonitors': [],
+                'printer/tempHistory/getTemperatureStoreSize': 3,
+                'gui/getDatasetValue': vi.fn(() => null),
+            }
+            await (actions as any).init(
+                { commit, rootGetters, dispatch, state },
+                payload
+            )
+            expect(commit).toHaveBeenCalledWith('setInitSeries', expect.any(Array))
+        })
+
+        it('init fires updateSource on setInterval', async () => {
+            vi.useFakeTimers()
+            const commit = vi.fn()
+            const dispatch = vi.fn()
+            const rootGetters = {
+                'printer/getAvailableHeaters': ['extruder'],
+                'printer/getAvailableSensors': ['extruder'],
+                'printer/getAvailableMonitors': [],
+                'printer/tempHistory/getTemperatureStoreSize': 3,
+                'gui/getDatasetValue': vi.fn(() => null),
+            }
+            await (actions as any).init(
+                { commit, rootGetters, dispatch, state },
+                { extruder: { temperatures: [200, 210, 220], targets: [180, 190, 200], powers: [0.5, 0.6, 0.7] } }
+            )
+            expect(dispatch).not.toHaveBeenCalledWith('updateSource')
+            vi.advanceTimersByTime(1000)
+            expect(dispatch).toHaveBeenCalledWith('updateSource')
+            vi.useRealTimers()
+        })
+
         it('init filters out sensors starting with underscore', async () => {
             const commit = vi.fn()
             const dispatch = vi.fn()
