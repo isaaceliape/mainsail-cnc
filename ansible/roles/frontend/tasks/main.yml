@@ -1,26 +1,11 @@
 ---
-# Build frontend — always use npm (available on all targets)
-- name: Check that npm is available
-  ansible.builtin.command: 'which npm'
-  register: pkg_check
-  changed_when: false
-  failed_when: pkg_check.rc != 0
-  when: not ansible_check_mode
-
-- name: Install frontend dependencies
-  ansible.builtin.command:
-    cmd: npm install --legacy-peer-deps
+# Deploy frontend — download pre-built nightly release, skip local build on-device
+- name: Deploy frontend via download_frontend script
+  ansible.builtin.script:
+    cmd: '{{ repo.dest }}/scripts/download_frontend.sh {{ frontend.web_root }}'
     chdir: '{{ repo.dest }}'
-  environment:
-    PATH: '{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.HOME }}/.bun/bin:/usr/local/bin:/usr/bin:/bin'
-  when: not ansible_check_mode
-
-- name: Build frontend
-  ansible.builtin.command:
-    cmd: npm run build
-    chdir: '{{ repo.dest }}'
-  environment:
-    PATH: '{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.HOME }}/.bun/bin:/usr/local/bin:/usr/bin:/bin'
+  register: frontend_deploy
+  changed_when: '"Frontend updated" in frontend_deploy.stdout or "built locally" in frontend_deploy.stdout'
   when: not ansible_check_mode
 
 - name: Ensure web root directory exists
