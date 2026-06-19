@@ -1,4 +1,4 @@
-name: Build Frontend
+name: Create Release
 
 on:
   workflow_dispatch:
@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   build:
-    name: Build and publish frontend
+    name: Create Release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
