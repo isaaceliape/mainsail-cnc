@@ -92,8 +92,8 @@ export const actions: ActionTree<EditorState, RootState> = {
         commit('updateCancelTokenSource', source)
         commit('updateLoaderState', true)
 
-        axios
-            .post(url, formData, {
+        try {
+            const response = await axios.post(url, formData, {
                 cancelToken: source.token,
                 onUploadProgress: (progressEvent) =>
                     dispatch('downloadProgress', {
@@ -102,30 +102,29 @@ export const actions: ActionTree<EditorState, RootState> = {
                         filesize: null,
                     }),
             })
-            .then((response) => {
-                return response.data
-            })
-            .then((data) => {
-                dispatch('clearLoader')
-                $toast.success(i18n.global.t('Editor.SuccessfullySaved', { filename: data.item.path }).toString())
-                if (payload.restartServiceName === 'klipper') {
-                    const klipperRestartMethod = getters['getKlipperRestartMethod']
-                    getSocket().emit('printer.gcode.script', { script: klipperRestartMethod })
-                } else if (payload.restartServiceName === 'moonraker') {
-                    getSocket().emit('server.restart', {})
-                } else if (payload.restartServiceName !== null) {
-                    getSocket().emit('machine.services.restart', { service: payload.restartServiceName })
-                }
+            const data = response.data
 
-                commit('updateLoadedHash', payload.content)
+            dispatch('clearLoader')
+            $toast.success(i18n.global.t('Editor.SuccessfullySaved', { filename: data.item.path }).toString())
+            if (payload.restartServiceName === 'klipper') {
+                const klipperRestartMethod = getters['getKlipperRestartMethod']
+                getSocket().emit('printer.gcode.script', { script: klipperRestartMethod })
+            } else if (payload.restartServiceName === 'moonraker') {
+                getSocket().emit('server.restart', {})
+            } else if (payload.restartServiceName !== null) {
+                getSocket().emit('machine.services.restart', { service: payload.restartServiceName })
+            }
 
-                if (payload.restartServiceName !== null) dispatch('close')
-            })
-            .catch((error) => {
-                window.console.log(error.response?.data.error)
-                dispatch('clearLoader')
-                $toast.error(i18n.global.t('Editor.FailedSave', { filename: state.filename }).toString())
-            })
+            commit('updateLoadedHash', payload.content)
+
+            if (payload.restartServiceName !== null) dispatch('close')
+            return true
+        } catch (error: any) {
+            window.console.log(error.response?.data.error)
+            dispatch('clearLoader')
+            $toast.error(i18n.global.t('Editor.FailedSave', { filename: state.filename }).toString())
+            return false
+        }
     },
 
     cancelLoad({ state, commit, dispatch }) {

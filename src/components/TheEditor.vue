@@ -15,7 +15,8 @@
             <panel
                 card-class="editor-dialog"
                 :icon="isWriteable ? mdiFileDocumentEditOutline : mdiFileDocumentOutline"
-                :title="title">
+                :title="title"
+                height="var(--app-height)">
                 <template #buttons>
                     <v-btn variant="text" rounded="0" class="d-none d-md-flex" @click="dialogDevices = true">
                         <v-icon size="small" class="mr-1">{{ mdiUsb }}</v-icon>
@@ -31,20 +32,7 @@
                         <v-icon size="small" class="mr-1">{{ mdiHelp }}</v-icon>
                         {{ $t('Editor.ConfigReference') }}
                     </v-btn>
-                    <span v-if="showAnnotationFilter" class="text-caption text-medium-emphasis mr-1">Show:</span>
-                    <v-select
-                        v-if="showAnnotationFilter"
-                        v-model="annotationFilter"
-                        :items="[
-                            { title: 'All', value: 'all' },
-                            { title: 'Errors', value: 'errors' },
-                            { title: 'Warnings', value: 'warnings' },
-                        ]"
-                        density="compact"
-                        variant="outlined"
-                        hide-details
-                        style="min-width: 90px; max-width: 120px"
-                        class="mr-2 annotation-filter-select" />
+
                     <v-btn
                         v-if="existsFileStructure"
                         variant="text"
@@ -72,8 +60,9 @@
                         @click="save(null)" />
                     <v-btn :icon="mdiCloseThick" rounded="0" class="editor-header-icon-btn" @click="close" />
                 </template>
-                <v-card-text class="pa-0 d-flex">
+                <v-card-text class="pa-0 d-flex editor-content-area">
                     <codemirror-async
+                        ref="codemirrorRef"
                         v-if="show"
                         v-model="sourcecode"
                         :name="filename"
@@ -112,6 +101,59 @@
                         </v-treeview>
                     </div>
                 </v-card-text>
+
+                <!-- Validation console (sticky bottom) -->
+                <div v-if="validationErrors.length > 0" class="validation-console" :style="{ height: consoleHeight + 'px' }">
+                    <div
+                        class="validation-console__resize-handle"
+                        @pointerdown="onResizeStart" />
+                    <div class="validation-console__header">
+                        <span class="validation-console__title">
+                            {{ validationErrors.length }} issue{{ validationErrors.length !== 1 ? 's' : '' }} found
+                        </span>
+                        <v-spacer />
+                        <v-select
+                            v-model="annotationFilter"
+                            :items="[
+                                { title: 'All', value: 'all' },
+                                { title: 'Errors', value: 'errors' },
+                                { title: 'Warnings', value: 'warnings' },
+                            ]"
+                            density="compact"
+                            variant="outlined"
+                            hide-details
+                            style="min-width: 90px; max-width: 120px" />
+                        <v-btn
+                            icon
+                            size="x-small"
+                            variant="text"
+                            @click="validationErrors = []">
+                            <v-icon size="small">{{ mdiCloseThick }}</v-icon>
+                        </v-btn>
+                    </div>
+                    <div ref="validationConsoleBodyRef" class="validation-console__body">
+                        <div
+                            v-for="(err, idx) in visibleErrors"
+                            :key="idx"
+                            role="button"
+                            tabindex="0"
+                            class="validation-console__item"
+                            :class="[
+                                'validation-console__item--' + err.severity,
+                                { 'validation-console__item--active': activeValidationErrorIndex === idx },
+                            ]"
+                            :data-validation-index="idx"
+                            @click="jumpToLine(err.line)"
+                            @keydown.enter.prevent="jumpToLine(err.line)"
+                            @keydown.space.prevent="jumpToLine(err.line)">
+                            <span class="validation-console__icon">
+                                {{ err.severity === 'error' ? '\u2716' : '\u26A0' }}
+                            </span>
+                            <span class="validation-console__line">L{{ err.line }}</span>
+                            <span class="validation-console__msg">{{ err.message }}</span>
+                        </div>
+                    </div>
+                </div>
             </panel>
         </v-dialog>
         <v-snackbar v-model="loaderBool" :timeout="-1" location="bottom right">
@@ -178,49 +220,6 @@
                 </v-card-actions>
             </panel>
         </v-dialog>
-        <!-- Config validation error dialog -->
-        <v-dialog v-model="dialogValidationErrors" persistent max-width="600">
-            <panel
-                card-class="editor-validation-dialog"
-                :icon="mdiAlertCircle"
-                title="Configuration Errors"
-                :margin-bottom="false">
-                <template #buttons>
-                    <v-btn :icon="mdiCloseThick" rounded="0" @click="closeValidationDialog" />
-                </template>
-                <v-card-text class="pt-3">
-                    <v-row>
-                        <v-col>
-                            <v-list density="compact" class="validation-error-list" lines="two">
-                                <v-list-item
-                                    v-for="(err, idx) in visibleErrors"
-                                    :key="idx"
-                                    :prepend-icon="err.severity === 'error' ? mdiCloseCircle : mdiAlert"
-                                    class="validation-error-item">
-                                    <v-list-item-title>
-                                        <span :class="err.severity === 'error' ? 'text-error' : 'text-warning'">
-                                            {{ err.severity === 'error' ? 'Error' : 'Warning' }} (line {{ err.line }}):
-                                        </span>
-                                    </v-list-item-title>
-                                    <v-list-item-subtitle class="text-wrap">
-                                        {{ err.message }}
-                                    </v-list-item-subtitle>
-                                </v-list-item>
-                            </v-list>
-                            <p v-if="visibleErrors.length > 0" class="body-1 mt-3 mb-0">
-                                Fix the errors above and try saving again.
-                            </p>
-                        </v-col>
-                    </v-row>
-                </v-card-text>
-                <v-card-actions>
-                    <v-spacer />
-                    <v-btn variant="text" color="primary" @click="closeValidationDialog">
-                        {{ $t('Buttons.Close') }}
-                    </v-btn>
-                </v-card-actions>
-            </panel>
-        </v-dialog>
         <devices-dialog v-model="dialogDevices" />
     </div>
 </template>
@@ -232,6 +231,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useBase } from '@/composables/useBase'
 import { capitalize, formatFilesize, windowBeforeUnloadFunction } from '@/plugins/helpers'
+import { $toast } from '@/store/runtime'
 import { klipperRepos } from '@/store/variables'
 import CodemirrorAsync from '@/components/inputs/CodemirrorAsync.vue'
 import { validateCfg, type CfgValidationError } from '@/utils/cfgValidator'
@@ -306,16 +306,46 @@ onMounted(async () => {
 })
 
 const dialogConfirmChange = ref(false)
-const dialogValidationErrors = ref(false)
 const validationErrors = ref<CfgValidationError[]>([])
 const annotationFilter = ref<'all' | 'errors' | 'warnings'>('all')
+const codemirrorRef = ref<{ gotoLine?: (line: number) => void } | null>(null)
+const validationConsoleBodyRef = ref<HTMLElement | null>(null)
+const currentEditorLine = ref<number | null>(null)
+let validationRunId = 0
 
-const showAnnotationFilter = computed(() => filename.value.endsWith('.cfg'))
+// Resize state for validation console
+const consoleHeight = ref(Math.round(window.innerHeight * 0.4))
+let resizeStartY = 0
+let resizeStartH = 0
+
+function onResizeStart(e: PointerEvent) {
+    resizeStartY = e.clientY
+    resizeStartH = consoleHeight.value
+    window.addEventListener('pointermove', onResizeMove)
+    window.addEventListener('pointerup', onResizeEnd)
+    e.preventDefault()
+}
+
+function onResizeMove(e: PointerEvent) {
+    const delta = resizeStartY - e.clientY
+    const vh = window.innerHeight
+    const minH = Math.round(vh * 0.1)
+    const maxH = Math.round(vh * 0.7)
+    consoleHeight.value = Math.max(minH, Math.min(maxH, resizeStartH + delta))
+}
+
+function onResizeEnd() {
+    window.removeEventListener('pointermove', onResizeMove)
+    window.removeEventListener('pointerup', onResizeEnd)
+}
 
 const visibleErrors = computed(() => {
     if (annotationFilter.value === 'all') return validationErrors.value
     return validationErrors.value.filter((e) => e.severity === annotationFilter.value.slice(0, -1))
 })
+const activeValidationErrorIndex = computed(() =>
+    currentEditorLine.value === null ? -1 : visibleErrors.value.findIndex((e) => e.line === currentEditorLine.value)
+)
 const dialogDevices = ref(false)
 const treeviewItemKeyProp = 'line' as const
 const structureActive = ref<number[]>([])
@@ -340,19 +370,28 @@ const sourcecode = computed({
     set: (newVal) => store.dispatch('editor/updateSourcecode', newVal),
 })
 
-// Run validation when .cfg file content loads
+async function runCfgValidation(content: string, fileName: string) {
+    const runId = ++validationRunId
+    const errors = await validateCfg(content, fileName)
+    if (runId !== validationRunId) return null
+    return [...errors].sort((a, b) => a.line - b.line)
+}
+
 watch(
-    sourcecode,
-    async (val) => {
-        if (!val || !filename.value.endsWith('.cfg')) return
-        await nextTick()
-        const errors = await validateCfg(val, filename.value)
-        if (errors.length > 0) {
-            errors.sort((a, b) => a.line - b.line)
-            validationErrors.value = errors
+    [sourcecode, filename],
+    async ([content, fileName]) => {
+        if (!fileName.endsWith('.cfg') || !content) {
+            validationRunId++
+            validationErrors.value = []
+            return
         }
+
+        await nextTick()
+        const errors = await runCfgValidation(content, fileName)
+        if (errors === null) return
+        validationErrors.value = errors
     },
-    { once: true }
+    { immediate: true }
 )
 
 const loaderBool = computed(() => store.state.editor.loaderBool ?? false)
@@ -463,55 +502,49 @@ function promptUnsavedChanges() {
     else dialogConfirmChange.value = true
 }
 
-function closeValidationDialog() {
-    dialogValidationErrors.value = false
-    validationErrors.value = []
-}
-
 async function save(restartServiceName: string | null = null) {
     dialogConfirmChange.value = false
 
-    // Run config validation before saving .cfg files
+    // Surface config validation results, but do not block saving.
     const isCfgFile = filename.value.endsWith('.cfg')
+    let cfgValidationIssues: CfgValidationError[] = []
     if (isCfgFile) {
-        const errors = await validateCfg(sourcecode.value, filename.value)
-        if (errors.length > 0) {
-            // Sort: errors first (by line), then warnings (by line)
-            errors.sort((a, b) => a.line - b.line)
-            validationErrors.value = errors
-            dialogValidationErrors.value = true
-            return
-        }
+        cfgValidationIssues = (await runCfgValidation(sourcecode.value, filename.value)) ?? []
+        validationErrors.value = cfgValidationIssues
+    } else {
+        validationRunId++
+        validationErrors.value = []
     }
 
-    store.dispatch('editor/saveFile', {
+    const saveSucceeded = await store.dispatch('editor/saveFile', {
         content: sourcecode.value,
         restartServiceName: restartServiceName,
     })
+
+    if (saveSucceeded && cfgValidationIssues.length > 0) {
+        $toast.warning(
+            `Saved with ${cfgValidationIssues.length} validation issue${cfgValidationIssues.length === 1 ? '' : 's'}.`
+        )
+    }
 }
 
 function activeChangesItemClick(item: ConfigFileSection) {
     structureActive.value = [item.line]
-    const cmEl = document.querySelector('.vue-codemirror')
-    if (!cmEl) return
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const cmVm = (cmEl as any).__vueParentComponent
-    if (!cmVm?.setupState?.gotoLine) return
-    cmVm.setupState.gotoLine(item.line)
+    jumpToLine(item.line)
 }
 
 function activeChanges(activeItems: Array<ConfigFileSection[typeof treeviewItemKeyProp]>) {
     if (!activeItems.length) return
-    const line = activeItems[0]
-    const cmEl2 = document.querySelector('.vue-codemirror')
-    if (!cmEl2) return
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const cmVm2 = (cmEl2 as any).__vueParentComponent
-    if (!cmVm2?.setupState?.gotoLine) return
-    cmVm2.setupState.gotoLine(line)
+    jumpToLine(activeItems[0])
+}
+
+function jumpToLine(line: number) {
+    codemirrorRef.value?.gotoLine?.(line)
 }
 
 function lineChanges(line: number) {
+    currentEditorLine.value = line
+
     configFileStructure.value?.map((item) => {
         if (item.line == line) {
             structureActive.value = [line]
@@ -525,6 +558,30 @@ function lineChanges(line: number) {
         }
     })
 }
+
+watch(activeValidationErrorIndex, async (newIndex) => {
+    if (newIndex < 0) return
+
+    await nextTick()
+
+    const container = validationConsoleBodyRef.value
+    const activeItem = container?.querySelector<HTMLElement>(`[data-validation-index="${newIndex}"]`)
+    if (!container || !activeItem) return
+
+    const containerRect = container.getBoundingClientRect()
+    const activeItemRect = activeItem.getBoundingClientRect()
+    const targetTop =
+        container.scrollTop +
+        (activeItemRect.top - containerRect.top) -
+        container.clientHeight / 2 +
+        activeItemRect.height / 2
+    const maxScrollTop = container.scrollHeight - container.clientHeight
+
+    container.scrollTo({
+        top: Math.max(0, Math.min(targetTop, maxScrollTop)),
+        behavior: 'smooth',
+    })
+})
 
 watch(changed, (newVal: boolean) => {
     if (!confirmUnsavedChanges.value) return
@@ -590,9 +647,11 @@ watch(changed, (newVal: boolean) => {
 }
 
 .structure-sidebar {
+    height: 100%;
+    min-height: 0;
     width: 300px;
     overflow-y: auto;
-    max-height: calc(100vh - 48px);
+    max-height: none;
 }
 ._structure-sidebar-item {
     text-overflow: ellipsis;
@@ -604,16 +663,135 @@ watch(changed, (newVal: boolean) => {
     margin-inline-start: 8px;
 }
 
+:deep(.editor-dialog) .panel-content {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.editor-content-area {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.editor-content-area :deep(.codemirror) {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+:deep(.editor-dialog) .panel-content {
+    min-height: 60vh;
+}
+
 :deep(.editor-dialog .v-toolbar__content) {
     padding-right: 8px;
 }
 
-.validation-error-list {
-    max-height: 400px;
-    overflow-y: auto;
+:deep(.editor-dialog .cm-editor) {
+    height: 100%;
 }
 
-.annotation-filter-select {
-    margin-right: 8px;
+.validation-console {
+    border-top: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+    background: rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    font-family: '0xProto Nerd Font Mono', monospace;
+    font-size: 12px;
+    width: 100%;
+    flex-shrink: 0;
 }
+
+.validation-console__resize-handle {
+    height: 4px;
+    cursor: ns-resize;
+    background: rgba(var(--v-theme-on-surface), 0.08);
+    flex-shrink: 0;
+    transition: background 0.15s;
+}
+
+.validation-console__resize-handle:hover,
+.validation-console__resize-handle:active {
+    background: rgb(var(--v-theme-primary));
+}
+
+.validation-console__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px 4px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(var(--v-theme-on-surface), 0.5);
+    border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+    flex-shrink: 0;
+}
+
+.validation-console__body {
+    padding: 4px 0;
+    overflow-y: auto;
+    flex: 1 1 auto;
+}
+
+.validation-console__item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 3px 12px;
+    line-height: 1.5;
+    transition: background 0.1s;
+    cursor: pointer;
+}
+
+.validation-console__item:hover,
+.validation-console__item:focus-visible {
+    background: rgba(var(--v-theme-on-surface), 0.05);
+    outline: none;
+}
+
+.validation-console__item--active {
+    background: rgba(var(--v-theme-primary), 0.18);
+    box-shadow: inset 2px 0 0 rgb(var(--v-theme-primary));
+}
+
+.validation-console__icon {
+    flex-shrink: 0;
+    width: 14px;
+    text-align: center;
+    font-size: 11px;
+}
+
+.validation-console__item--error .validation-console__icon {
+    color: #f44336;
+}
+
+.validation-console__item--warning .validation-console__icon {
+    color: #ff9800;
+}
+
+.validation-console__line {
+    flex-shrink: 0;
+    color: rgba(var(--v-theme-on-surface), 0.4);
+    min-width: 36px;
+}
+
+.validation-console__msg {
+    color: rgba(var(--v-theme-on-surface), 0.75);
+    word-break: break-word;
+}
+
+.validation-console__item--error .validation-console__msg {
+    color: #ef9a9a;
+}
+
+.validation-console__item--warning .validation-console__msg {
+    color: #ffcc80;
+}
+
 </style>

@@ -80,6 +80,7 @@ function initialize() {
 
     nextTick(() => {
         setCmValue(props.modelValue ?? props.code ?? props.value ?? content ?? '')
+        syncAnnotations(props.validationErrors)
 
         emit('ready', codemirror)
     })
@@ -200,32 +201,63 @@ function clearAnnotations() {
     })
 }
 
+function syncAnnotations(errors?: { line: number; severity: 'error' | 'warning' }[]) {
+    if (errors && errors.length > 0) {
+        setAnnotations(errors)
+    } else {
+        clearAnnotations()
+    }
+}
+
 watch(
     () => props.validationErrors,
     (errors) => {
-        if (errors && errors.length > 0) {
-            setAnnotations(errors)
-        } else {
-            clearAnnotations()
-        }
+        syncAnnotations(errors)
     },
-    { deep: true }
+    { deep: true, immediate: true }
 )
 
 defineExpose({ gotoLine, setAnnotations, clearAnnotations })
 
 function gotoLine(line: number) {
-    const l = cminstance?.state?.doc.line(line)
-    if (!l) return
+    const view = cminstance
+    const l = view?.state?.doc.line(line)
+    if (!view || !l) return
 
-    cminstance?.dispatch({
+    view.dispatch({
         selection: { head: l.from, anchor: l.to },
-        effects: EditorView.scrollIntoView(l.from, { y: 'center' }),
+    })
+
+    requestAnimationFrame(() => {
+        const coords = view.coordsAtPos(l.from)
+        const scroller = view.scrollDOM
+        if (!coords || !scroller) return
+
+        const scrollerRect = scroller.getBoundingClientRect()
+        const targetTop = scroller.scrollTop + (coords.top - scrollerRect.top) - scroller.clientHeight / 2
+
+        scroller.scrollTo({
+            top: Math.max(0, targetTop),
+            behavior: 'smooth',
+        })
     })
 }
 </script>
 
 <style>
+.vue-codemirror {
+    display: flex;
+    flex: 1 1 auto;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.vue-codemirror > div {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
 .cm-annotation-error {
     background: rgba(255, 0, 0, 0.1) !important;
     text-decoration: wavy underline #f44336 2px !important;

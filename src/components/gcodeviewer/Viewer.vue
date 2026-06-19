@@ -88,6 +88,15 @@
                             </v-col>
                             <v-col class="v-col-12 v-col-sm-6 v-col-md-4">
                                 <v-select
+                                    v-model="previewWcs"
+                                    :items="previewWcsItems"
+                                    label="WCS"
+                                    density="compact"
+                                    hide-details
+                                    variant="outlined"></v-select>
+                            </v-col>
+                            <v-col class="v-col-12 v-col-sm-6 v-col-md-4">
+                                <v-select
                                     v-model="colorMode"
                                     :items="colorModes"
                                     :label="$t('GCodeViewer.ColorMode')"
@@ -254,6 +263,7 @@ import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useDisplay } from 'vuetify'
 import { useBase } from '@/composables/useBase'
+import { useCncOffsets, offsetNames } from '@/composables/useCncOffsets'
 import GCodeViewer from '@sindarius/gcodeviewer'
 import axios, { CancelTokenSource } from 'axios'
 import type { AxiosProgressEvent } from 'axios'
@@ -300,6 +310,7 @@ const route = useRoute()
 const { t } = useI18n()
 const display = useDisplay()
 const { apiUrl, printerIsPrinting } = useBase()
+const { activeWcs, wcsOffsets, refreshWcs } = useCncOffsets()
 
 defineProps<{
     filename?: string
@@ -344,12 +355,20 @@ const downloadSnackbar = ref<DownloadSnackbar>({
 })
 
 const fileData = ref('')
+const previewWcs = ref('G54')
+const appliedPreviewOffset = ref({ X: 0, Y: 0, Z: 0 })
 
 const resizeObserver = ref<ResizeObserver | null>(null)
 
 onMounted(async () => {
     loadedFile.value = store.state.gcodeviewer?.loadedFileBackup ?? null
     viewer = store.state.gcodeviewer?.viewerBackup ?? null
+    try {
+        await refreshWcs()
+        previewWcs.value = activeWcs.value
+    } catch (error) {
+        window.console.error(error)
+    }
     await init()
 
     if (loadedFile.value !== null && viewer) scrubFileSize.value = viewer.fileSize
@@ -511,6 +530,7 @@ function clearLoadedFile() {
     viewer.clearScene(true)
     loadedFile.value = null
     tracking.value = false
+    appliedPreviewOffset.value = { X: 0, Y: 0, Z: 0 }
 }
 
 function chooseFile() {
@@ -527,6 +547,7 @@ function finishLoad() {
 
     refreshPrintingObjects()
     scrubFileSize.value = viewer.fileSize
+    applyPreviewOffset(true)
 
     viewer.gcodeProcessor.updateFilePosition(viewer.fileSize)
 }
@@ -649,6 +670,48 @@ function resetCamera() {
     viewer?.resetCamera()
 }
 
+const previewWcsItems = computed(() =>
+    offsetNames.map((name) => {
+        const offset = wcsOffsets.value[name] ?? { X: 0, Y: 0, Z: 0 }
+        return {
+            title: `${name} · X ${offset.X} · Y ${offset.Y} · Z ${offset.Z}`,
+            value: name,
+        }
+    })
+)
+
+function applyPreviewOffset(force = false) {
+    if (viewer === null || loadedFile.value === null) return
+
+    const nextOffset = wcsOffsets.value[previewWcs.value] ?? { X: 0, Y: 0, Z: 0 }
+    const deltaX = nextOffset.X - appliedPreviewOffset.value.X
+    const deltaY = nextOffset.Y - appliedPreviewOffset.value.Y
+    const deltaZ = nextOffset.Z - appliedPreviewOffset.value.Z
+
+    if (!force && deltaX === 0 && deltaY === 0 && deltaZ === 0) return
+
+    viewer.scene?.meshes?.forEach((mesh: any) => {
+        if (mesh?.renderingGroupId !== 2 || mesh?.name === 'JRNozzle') return
+        if (!mesh?.position) return
+
+        mesh.position.x += deltaX
+        mesh.position.y += deltaZ
+        mesh.position.z += deltaY
+    })
+
+    if (!tracking.value) {
+        const toolCursor = (viewer as any)?.toolCursor
+        if (toolCursor?.position) {
+            toolCursor.position.x += deltaX
+            toolCursor.position.y += deltaZ
+            toolCursor.position.z += deltaY
+        }
+    }
+
+    appliedPreviewOffset.value = { ...nextOffset }
+    viewer.forceRender()
+}
+
 function setReloadRequiredFlag() {
     if (loadedFile.value && loadedFile.value != '') {
         reloadRequired.value = true
@@ -660,6 +723,10 @@ watch(renderQuality, async (newVal: { value: number }) => {
         viewer.updateRenderQuality(newVal.value)
         await reloadViewer()
     }
+})
+
+watch(previewWcs, () => {
+    applyPreviewOffset()
 })
 
 watch(currentPosition, (newVal: number[]) => {

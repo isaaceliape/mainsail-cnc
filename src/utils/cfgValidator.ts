@@ -1,6 +1,8 @@
-// .cfg file validator for Klipper configuration files
-// Checks syntax, section headers, key=value format, duplicate sections,
-// and resolves [include] directives recursively.
+// .cfg file validator for Klipper configuration files.
+// It intentionally follows Klipper's parser model more closely than a
+// generic INI validator: duplicate sections are allowed, [include ...]
+// headers are special, and indented lines are continuation lines for
+// multi-line options such as gcode: blocks.
 
 export interface CfgValidationError {
     line: number
@@ -16,7 +18,6 @@ interface CfgSection {
 interface ParseContext {
     errors: CfgValidationError[]
     sections: CfgSection[]
-    seenSections: Map<string, number> // section name → first occurrence line
     filePath: string
     visitedFiles: Set<string>
 }
@@ -32,15 +33,15 @@ export async function validateCfg(
     fileName: string,
     includeResolver?: (path: string) => Promise<string | null>
 ): Promise<CfgValidationError[]> {
+    const normalizedFileName = normalizePath(fileName)
     const ctx: ParseContext = {
         errors: [],
         sections: [],
-        seenSections: new Map(),
-        filePath: fileName,
+        filePath: normalizedFileName,
         visitedFiles: new Set(),
     }
 
-    ctx.visitedFiles.add(fileName)
+    ctx.visitedFiles.add(normalizedFileName)
     await parseContent(content, ctx, includeResolver)
     return ctx.errors
 }
@@ -52,7 +53,7 @@ async function parseContent(
 ): Promise<void> {
     const lines = content.split('\n')
     let currentSection: string | null = null
-    let currentSectionLine = 0
+    let currentOption: string | null = null
 
     for (let i = 0; i < lines.length; i++) {
         const rawLine = lines[i]
@@ -85,39 +86,9 @@ async function parseContent(
                 continue
             }
 
-            // Check for spaces in section name (Klipper doesn't allow spaces in most section names)
-            if (sectionName.includes(' ')) {
-                ctx.errors.push({
-                    line: lineNum,
-                    message: `Section name "${sectionName}" contains spaces. This may cause parsing issues.`,
-                    severity: 'warning',
-                })
-            }
-
             currentSection = sectionName
-            currentSectionLine = lineNum
+            currentOption = null
             ctx.sections.push({ name: sectionName, startLine: lineNum })
-
-            // Check for duplicate sections
-            if (ctx.seenSections.has(sectionName.toLowerCase())) {
-                const firstLine = ctx.seenSections.get(sectionName.toLowerCase())
-                ctx.errors.push({
-                    line: lineNum,
-                    message: `Duplicate section [${sectionName}] (first defined at line ${firstLine}). Duplicate sections will be merged by Klipper, which may cause unexpected behavior.`,
-                    severity: 'error',
-                })
-            } else {
-                ctx.seenSections.set(sectionName.toLowerCase(), lineNum)
-            }
-
-            // Handle [include] directives
-            if (sectionName.toLowerCase() === 'include') {
-                const includePath = getIncludePath(rawLine, lineNum, ctx)
-                if (includePath && includeResolver) {
-                    // The actual path extraction happens below
-                    continue
-                }
-            }
 
             continue
         }
@@ -132,23 +103,22 @@ async function parseContent(
             continue
         }
 
+        // Klipper uses RawConfigParser semantics, so any indented line after a
+        // parsed option is part of that option's multiline value.
+        if (currentOption !== null && isIndented(rawLine)) {
+            continue
+        }
+
         // Check if line looks like a key=value pair
         const eqIdx = trimmed.indexOf('=')
         const colonIdx = trimmed.indexOf(':')
 
         if (eqIdx === -1 && colonIdx === -1) {
-            // This might be a value continuation or an invalid line
-            // Check if previous line ended with a continuation marker or if this is a raw value
-            const prevLine = i > 0 ? lines[i - 1].trim() : ''
-            const prevEndsWithContinuation = prevLine.endsWith('\\') || prevLine.endsWith('"')
-
-            if (!prevEndsWithContinuation && !trimmed.startsWith('"')) {
-                ctx.errors.push({
-                    line: lineNum,
-                    message: `Invalid line format: "${truncate(trimmed, 40)}". Expected key=value.`,
-                    severity: 'error',
-                })
-            }
+            ctx.errors.push({
+                line: lineNum,
+                message: `Invalid line format: "${truncate(trimmed, 40)}". Expected option syntax like key: value or key = value.`,
+                severity: 'error',
+            })
             continue
         }
 
@@ -160,7 +130,11 @@ async function parseContent(
                 message: `Missing key name before "=": "${truncate(trimmed, 40)}".`,
                 severity: 'error',
             })
+            currentOption = null
+            continue
         }
+
+        currentOption = key.toLowerCase()
     }
 
     // Check for [include] directives - parse raw line for the path
@@ -168,55 +142,77 @@ async function parseContent(
     for (let i = 0; i < lines.length; i++) {
         const rawLine = lines[i].trim()
         const lineNum = i + 1
-        if (rawLine.startsWith('[include ') || rawLine.toLowerCase().startsWith('[include ') && rawLine.endsWith(']')) {
-            // Extract the path between [include and ]
-            const withoutBrackets = rawLine.slice(1, -1).trim() // "include path/to/file.cfg"
-            const parts = withoutBrackets.split(/\s+/)
-            if (parts.length >= 2) {
-                const includePath = parts.slice(1).join(' ').replace(/^["']|["']$/g, '')
-                if (includeResolver) {
-                    try {
-                        const includedContent = await includeResolver(includePath)
-                        if (includedContent !== null) {
-                            const includeFileName = includePath.split('/').pop() || includePath
-                            if (!ctx.visitedFiles.has(includeFileName)) {
-                                ctx.visitedFiles.add(includeFileName)
-                                const subCtx: ParseContext = {
-                                    errors: ctx.errors,
-                                    sections: ctx.sections,
-                                    seenSections: ctx.seenSections,
-                                    filePath: includeFileName,
-                                    visitedFiles: ctx.visitedFiles,
-                                }
-                                await parseContent(includedContent, subCtx, includeResolver)
-                            }
-                        } else {
-                            ctx.errors.push({
-                                line: lineNum,
-                                message: `Included file not found: "${includePath}".`,
-                                severity: 'warning',
-                            })
+        const includePath = getIncludePath(rawLine)
+        if (includePath && includeResolver) {
+            const resolvedIncludePath = resolveIncludePath(ctx.filePath, includePath)
+            try {
+                const includedContent = await includeResolver(includePath)
+                if (includedContent !== null) {
+                    if (!ctx.visitedFiles.has(resolvedIncludePath)) {
+                        ctx.visitedFiles.add(resolvedIncludePath)
+                        const subCtx: ParseContext = {
+                            errors: ctx.errors,
+                            sections: ctx.sections,
+                            filePath: resolvedIncludePath,
+                            visitedFiles: ctx.visitedFiles,
                         }
-                    } catch {
-                        ctx.errors.push({
-                            line: lineNum,
-                            message: `Error reading included file: "${includePath}".`,
-                            severity: 'warning',
-                        })
+                        await parseContent(includedContent, subCtx, includeResolver)
                     }
+                } else {
+                    ctx.errors.push({
+                        line: lineNum,
+                        message: `Included file not found: "${includePath}".`,
+                        severity: 'warning',
+                    })
                 }
+            } catch {
+                ctx.errors.push({
+                    line: lineNum,
+                    message: `Error reading included file: "${includePath}".`,
+                    severity: 'warning',
+                })
             }
         }
     }
 }
 
-function getIncludePath(rawLine: string, lineNum: number, ctx: ParseContext): string | null {
+function getIncludePath(rawLine: string): string | null {
     // Extract path from: [include path/to/file.cfg]
     const match = rawLine.match(/^\[include\s+(.+?)\]$/i)
     if (match) {
         return match[1].replace(/^["']|["']$/g, '')
     }
     return null
+}
+
+function isIndented(line: string): boolean {
+    return line.length > 0 && /\s/.test(line[0])
+}
+
+function resolveIncludePath(baseFilePath: string, includePath: string): string {
+    if (includePath.startsWith('/')) return normalizePath(includePath)
+
+    const normalizedBase = normalizePath(baseFilePath)
+    const lastSlashIndex = normalizedBase.lastIndexOf('/')
+    const baseDir = lastSlashIndex === -1 ? '' : normalizedBase.slice(0, lastSlashIndex)
+    return normalizePath(baseDir ? `${baseDir}/${includePath}` : includePath)
+}
+
+function normalizePath(path: string): string {
+    const normalized = path.replace(/\\/g, '/')
+    const parts: string[] = []
+
+    for (const segment of normalized.split('/')) {
+        if (!segment || segment === '.') continue
+        if (segment === '..') {
+            if (parts.length > 0 && parts[parts.length - 1] !== '..') parts.pop()
+            else parts.push('..')
+            continue
+        }
+        parts.push(segment)
+    }
+
+    return normalized.startsWith('/') ? `/${parts.join('/')}` : parts.join('/')
 }
 
 function truncate(str: string, maxLen: number): string {
