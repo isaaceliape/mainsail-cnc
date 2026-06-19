@@ -376,6 +376,16 @@ function addPrinter() {
     dialogAddPrinter.value.bool = false
     dialogAddPrinter.value.path = '/'
     dialogAddPrinter.value.name = ''
+
+    // Connect to the newly added printer
+    const newPrinter = {
+        socket: {
+            hostname: values.hostname,
+            port: values.port,
+            path: values.path,
+        },
+    } as FarmPrinterState
+    connect(newPrinter)
 }
 
 function editPrinter(printer: GuiRemoteprintersStatePrinter) {
