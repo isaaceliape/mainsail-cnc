@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mainsail CNC</title>
+    <title>E3CNC</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
     <style>
         @font-face {
@@ -36,8 +36,8 @@
             --border: #30363d;
             --text: #e6edf3;
             --text-dim: #8b949e;
-            --accent: #3fb950;
-            --accent-dim: #2ea043;
+            --accent: #00FF00;
+            --accent-dim: #00cc00;
         }
 
         body {
@@ -103,6 +103,34 @@
         }
         .feature p { color: var(--text-dim); font-size: 0.85rem; line-height: 1.5; }
 
+        .changelog-list { display: flex; flex-direction: column; gap: 6px; }
+        .changelog-list .entry {
+            display: flex; align-items: flex-start; gap: 10px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 0.82rem;
+            transition: border-color 0.2s;
+        }
+        .changelog-list .entry:hover { border-color: var(--accent-dim); }
+        .changelog-list .entry .tag {
+            flex-shrink: 0;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-top: 2px;
+        }
+        .tag-fix { background: #1a3a2a; color: #3fb950; }
+        .tag-feat { background: #1a2a3a; color: #58a6ff; }
+        .tag-docs { background: #2a1a3a; color: #bc8cff; }
+        .tag-chore { background: #2a2a2a; color: #8b949e; }
+        .changelog-list .entry .desc { color: var(--text-dim); line-height: 1.5; }
+        .changelog-list .entry .desc strong { color: var(--text); }
+
         .links-list { display: flex; flex-direction: column; gap: 8px; }
         .links-list a {
             display: flex; align-items: center; gap: 10px;
@@ -135,17 +163,17 @@
 <body>
     <div class="container">
         <header>
-            <h1>Mainsail<span>CNC</span></h1>
+            <h1>E3<span>CNC</span></h1>
             <p>A modern, responsive CNC controller interface for Klipper-based machines.</p>
             <div class="badge-row">
                 <a href="https://github.com/isaaceliape/mainsail-cnc/releases">
-                    <img src="https://img.shields.io/github/v/release/isaaceliape/mainsail-cnc?style=flat&label=Release&color=3fb950" alt="Release" />
+                    <img src="https://img.shields.io/github/v/release/isaaceliape/mainsail-cnc?style=flat&label=Release&color=00FF00" alt="Release" />
                 </a>
                 <a href="https://github.com/isaaceliape/mainsail-cnc">
-                    <img src="https://img.shields.io/github/stars/isaaceliape/mainsail-cnc?style=flat&label=Stars&color=3fb950" alt="Stars" />
+                    <img src="https://img.shields.io/github/stars/isaaceliape/mainsail-cnc?style=flat&label=Stars&color=00FF00" alt="Stars" />
                 </a>
                 <a href="https://github.com/isaaceliape/mainsail-cnc/blob/main/LICENSE">
-                    <img src="https://img.shields.io/github/license/isaaceliape/mainsail-cnc?style=flat&label=License&color=3fb950" alt="License" />
+                    <img src="https://img.shields.io/github/license/isaaceliape/mainsail-cnc?style=flat&label=License&color=00FF00" alt="License" />
                 </a>
             </div>
         </header>
@@ -154,10 +182,10 @@
             <h2>Purpose</h2>
             <div class="purpose">
                 <p>
-                    <strong>Mainsail CNC</strong> is a fork of <a href="https://docs.mainsail.xyz/" style="color: var(--accent);">Mainsail</a> — the popular web interface for 3D printers running Klipper — adapted and extended for CNC machine control.
+                    <strong>E3CNC</strong> (formerly Mainsail CNC) is a fork of <a href="https://docs.mainsail.xyz/" style="color: var(--accent);">Mainsail</a> adapted and extended for CNC machine control.
                 </p>
                 <p>
-                    It provides a real-time, browser-based control panel for Klipper-based CNC mills, routers, plasma cutters, and lathes. Built with Vue 3 and Vuetify 3, it runs on any device with a web browser — phone, tablet, or desktop.
+                    It provides a real-time, browser-based control panel for Klipper-based CNC mills, routers, plasma cutters, and lathes. Built with Vue 3.5 and Vuetify 3, it runs on any device with a web browser.
                 </p>
             </div>
         </section>
@@ -166,19 +194,19 @@
             <h2>Features</h2>
             <div class="features">
                 <div class="feature">
-                    <div class="icon"><i class="fa-solid fa-window-maximize"></i></div>
-                    <h3>Floating Panels</h3>
-                    <p>Any dashboard panel can be torn off into a freely draggable, resizable window. Dock it back with a smooth animation.</p>
+                    <div class="icon"><i class="fa-solid fa-palette"></i></div>
+                    <h3>E3CNC Theme</h3>
+                    <p>Default green (#00FF00) branding theme with custom logo. Persisted to Moonraker database after every update via Ansible.</p>
                 </div>
                 <div class="feature">
                     <div class="icon"><i class="fa-solid fa-crosshairs"></i></div>
-                    <h3>Interactive Offsets</h3>
-                    <p>SVG coordinate map with click-to-move, hover crosshairs, snap-to-grid, and stock size visualization for all six WCS zones.</p>
+                    <h3>Interactive WCS Preview</h3>
+                    <p>SVG coordinate map with click-to-move, home confirmation dialog (Enter/Esc), smooth tool dot animation, snap-to-grid, and stock size visualization for all six WCS zones.</p>
                 </div>
                 <div class="feature">
-                    <div class="icon"><i class="fa-solid fa-icons"></i></div>
-                    <h3>Smart File Browsing</h3>
-                    <p>File-type icons with distinct colors, sortable columns, and automatic backup file detection with hide toggle.</p>
+                    <div class="icon"><i class="fa-solid fa-window-maximize"></i></div>
+                    <h3>Floating Panels</h3>
+                    <p>Any dashboard panel can be torn off into a freely draggable, resizable window. Dock it back with a smooth animation.</p>
                 </div>
                 <div class="feature">
                     <div class="icon"><i class="fa-solid fa-images"></i></div>
@@ -188,7 +216,7 @@
                 <div class="feature">
                     <div class="icon"><i class="fa-solid fa-wifi"></i></div>
                     <h3>Auto-Connect</h3>
-                    <p>Auto-discovers Moonraker on page load by probing ports 7125 and 7130. No manual IP entry needed.</p>
+                    <p>Auto-discovers Moonraker on page load by probing ports 7125 and 7130. No manual IP entry needed for first-time setup.</p>
                 </div>
                 <div class="feature">
                     <div class="icon"><i class="fa-solid fa-gauge-high"></i></div>
@@ -201,9 +229,76 @@
                     <p>Arrow key jogging with toggle — move your machine axes directly from the keyboard, no mouse required.</p>
                 </div>
                 <div class="feature">
+                    <div class="icon"><i class="fa-solid fa-arrow-up-from-bracket"></i></div>
+                    <h3>Scroll-to-Top</h3>
+                    <p>Floating scroll-to-top button appears in the bottom-right corner after scrolling down, with a smooth fade transition.</p>
+                </div>
+                <div class="feature">
                     <div class="icon"><i class="fa-solid fa-floppy-disk"></i></div>
                     <h3>State Persistence</h3>
                     <p>Floating panel positions, editor files, dashboard scroll, and grid settings all survive page reloads.</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Recent Changes</h2>
+            <div class="changelog-list">
+                <div class="entry">
+                    <span class="tag tag-feat">feat</span>
+                    <span class="desc"><strong>E3CNC default theme</strong> — Green #00FF00 branding set as default, persisted to Moonraker DB after every update. Topbar, page title, and printer name default to "E3CNC".</span>
+                </div>
+                <div class="entry">
+                    <span class="tag tag-feat">feat</span>
+                    <span class="desc"><strong>Home confirmation dialog</strong> — Clicking on the WCS preview when the machine isn't homed shows a dialog asking to home first (Enter to confirm, Esc to cancel).</span>
+                </div>
+                <div class="entry">
+                    <span class="tag tag-feat">feat</span>
+                    <span class="desc"><strong>Smooth tool dot animation</strong> — The tool position dot on the WCS preview now smoothly animates along the expected path when a move command is sent.</span>
+                </div>
+                <div class="entry">
+                    <span class="tag tag-feat">feat</span>
+                    <span class="desc"><strong>Moonraker DB reset script</strong> — New <code>scripts/reset_mainsail_db.sh</code> for testing the first-time setup flow.</span>
+                </div>
+                <div class="entry">
+                    <span class="tag tag-fix">fix</span>
+                    <span class="desc"><strong>WCS preview G-code fix</strong> — Fixed <code>\\n</code> → <code>\n</code> bug in <code>onSvgClick</code> that caused move commands to be silently ignored by Moonraker.</span>
+                </div>
+                <div class="entry">
+                    <span class="tag tag-fix">fix</span>
+                    <span class="desc"><strong>Update dialog not opening</strong> — Vuetify 3 migration leftover: <code>:value</code> on <code>v-dialog</code> changed to <code>:model-value</code>. Fixed in 4 dialogs. Added error toasts when update RPC calls fail.</span>
+                </div>
+                <div class="entry">
+                    <span class="tag tag-fix">fix</span>
+                    <span class="desc"><strong>First-time setup flow</strong> — Auto-detected and manually added printers now connect directly without farm registration. Add Printer dialog now connects immediately after saving.</span>
+                </div>
+                <div class="entry">
+                    <span class="tag tag-fix">fix</span>
+                    <span class="desc"><strong>Ansible deployment</strong> — Bun dependency removed. Frontend role now delegates to <code>download_frontend.sh</code> (nightly release). PATH fixed in <code>post_update.sh</code> and <code>download_frontend.sh</code>. Ansible roles_path fixed.</span>
+                </div>
+                <div class="entry">
+                    <span class="tag tag-chore">chore</span>
+                    <span class="desc"><strong>CI/CD</strong> — Nightly releases changed to manual trigger via <code>workflow_dispatch</code> (no longer automatic on push to main). Unit tests removed from CI.</span>
+                </div>
+                <div class="entry">
+                    <span class="tag tag-feat">feat</span>
+                    <span class="desc"><strong>Scroll-to-top button</strong> — Floating primary button with fade transition appears in bottom-right corner after scrolling 300px.</span>
+                </div>
+                <div class="entry">
+                    <span class="tag tag-fix">fix</span>
+                    <span class="desc"><strong>Macro button contrast</strong> — Left border separator, default opacity 0.7, full opacity on hover or when parameters dialog is open.</span>
+                </div>
+                <div class="entry">
+                    <span class="tag tag-fix">fix</span>
+                    <span class="desc"><strong>Cursor tooltip background</strong> — WCS preview coordinate tooltip now has solid black background (#000) with white text for better readability.</span>
+                </div>
+                <div class="entry">
+                    <span class="tag tag-fix">fix</span>
+                    <span class="desc"><strong>Color picker Vuetify 3 compat</strong> — Fixed <code>@update:color</code> → <code>@update:model-value</code> in 5 files. Fixed context menu positioning (<code>offset-y</code> → <code>:target</code>).</span>
+                </div>
+                <div class="entry">
+                    <span class="tag tag-docs">docs</span>
+                    <span class="desc">Updated <strong>AGENTS.md</strong> with Playwright MCP headed browser, tmux + ssh cnc, and browser validation instructions.</span>
                 </div>
             </div>
         </section>
@@ -232,7 +327,7 @@
     </div>
 
     <footer>
-        <p>Mainsail CNC &mdash; based on <a href="https://docs.mainsail.xyz/">Mainsail</a>, built for the CNC community.</p>
+        <p>E3CNC &mdash; based on <a href="https://docs.mainsail.xyz/">Mainsail</a>, built for the CNC community.</p>
     </footer>
 </body>
 </html>

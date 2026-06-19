@@ -117,12 +117,14 @@ a9144473 spec: add Ansible migration plan
 - **Package Manager**: Bun (not npm). Use `bun install`, `bun run`, `bunx`.
 - **Dev Server**: Run within `tmux`; check for existing sessions first. HMR is active.
 - **Ansible**: Playbooks at `ansible/playbooks/`. Run `ansible-playbook ansible/playbooks/install.yml` for full install.
-- **CI**: Every push to main triggers a nightly release with pre-built frontend. Check status with `gh run list`.
+- **Wiki**: The project wiki is available at `~/repos/mainsail-cnc.wiki/` (cloned from `https://github.com/isaaceliape/mainsail-cnc.wiki.git`). Update `Home.md` and `Changelog.md` when shipping significant changes.
+- **CI**: Releases are triggered manually via GitHub Actions (`workflow_dispatch`). Check status with `gh run list`.
 
 ## Operational Guidelines
 
 - **Ask before pushing**: Never push to remote without asking the user first.
 - **Build verification**: Always run `bun run build` after changes. The build must pass before committing.
+- **Browser validation**: Always validate changes using the headed browser before committing. Use `playwright-cli` to navigate the app, interact with changed components, and verify the expected behavior. Check the **browser console** for any errors or warnings introduced by your changes.
 - **Playwright MCP**: Always use a **non-headless (headed)** browser instance when using Playwright MCP for browser automation. This ensures you can visually observe interactions in real-time and intervene when needed.
 - **Store layer**: Store migration is complete — all Vue 2 patterns (`Vue.set`, `Vue.$socket`, `Vue.$toast`, `import Vue`) removed.
 - **`@vue/compat`**: Fully removed — app runs on pure Vue 3.5 + Vuetify 3.
