@@ -35,6 +35,7 @@ REMOTE_CONF="$REMOTE_HOME/printer_data/config/moonraker.conf"
 REMOTE_EXTRACTOR_PATH="$REMOTE_HOME/printer_data/scripts/cnc_metadata_extractor.py"
 REMOTE_KLIPPER_EXTRAS="$REMOTE_HOME/klipper/klippy/extras"
 REMOTE_MACROS_DIR="$REMOTE_HOME/printer_data/config/macros"
+REMOTE_E3CNC_DIR="$REMOTE_HOME/printer_data/config/E3CNC"
 REMOTE_DEPLOY_DIR="$REMOTE_HOME/mainsail"
 
 echo "=== mainsail-cnc uninstall ==="

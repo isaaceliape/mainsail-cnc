@@ -159,4 +159,4 @@ Path and channel overrides are also available as `CNC_REPO_DIR`,
 list.
 
 A standalone snippet that you can `[include]` from `moonraker.conf`
-manually lives at [`config/examples/update-manager.conf`](../config/examples/update-manager.conf).
+manually lives at [`E3CNC/examples/update-manager.conf`](../E3CNC/examples/update-manager.conf).

@@ -16,6 +16,7 @@ klipper:
 
 printer_data:
   config_dir: '{{ ansible_env.HOME }}/printer_data/config'
+  E3CNC_dir: '{{ printer_data.config_dir }}/E3CNC'
   scripts_dir: '{{ ansible_env.HOME }}/printer_data/scripts'
   macros_dir: '{{ ansible_env.HOME }}/printer_data/config/macros'
 

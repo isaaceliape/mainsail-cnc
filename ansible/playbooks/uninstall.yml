@@ -53,19 +53,9 @@
         path: '{{ klipper.extras_dir }}/work_coordinate_systems.py'
         state: absent
 
-    - name: Remove wcs_macros.cfg from printer_data/config/macros/
+    - name: Remove E3CNC directory from printer_data/config/
       ansible.builtin.file:
-        path: '{{ printer_data.macros_dir }}/wcs_macros.cfg'
-        state: absent
-
-    - name: Remove e3cnc_macros.cfg from printer_data/config/macros/
-      ansible.builtin.file:
-        path: '{{ printer_data.macros_dir }}/e3cnc_macros.cfg'
-        state: absent
-
-    - name: Remove macros directory if empty
-      ansible.builtin.file:
-        path: '{{ printer_data.macros_dir }}'
+        path: '{{ printer_data.E3CNC_dir }}'
         state: absent
       ignore_errors: true
 
