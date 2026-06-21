@@ -21,9 +21,16 @@ echo "=== Downloading pre-built frontend ==="
 TMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TMP_DIR"' EXIT
 
-PKG_VER="v$(node -p "require('$REPO_ROOT/package.json').version")"
-ASSET_NAME="mainsail-cnc-${PKG_VER}.zip"
+TAG_VER=$(git -C "$REPO_ROOT" tag --points-at HEAD | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n1 || true)
+if [[ -n "$TAG_VER" ]]; then
+    RELEASE_VER="$TAG_VER"
+else
+    RELEASE_VER="v$(node -p "require('$REPO_ROOT/package.json').version")"
+fi
+ASSET_NAME="mainsail-cnc-${RELEASE_VER}.zip"
 ZIP_FILE="$TMP_DIR/$ASSET_NAME"
+
+echo "    target release asset: $ASSET_NAME"
 
 RELEASES_API_URL="https://api.github.com/repos/${OWNER}/${REPO}/releases?per_page=10"
 ZIP_URL=$(curl -sfL "$RELEASES_API_URL" | node -e "

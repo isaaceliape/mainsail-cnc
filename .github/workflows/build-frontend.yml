@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version_tag:
-        description: 'Optional version tag for the release (e.g. v0.1.0). If empty, uses package.json version.'
+        description: 'Optional semver tag for the release (e.g. v0.4.2). If empty, uses a semver tag on HEAD, then falls back to package.json.'
         required: false
         type: string
 
@@ -26,9 +26,28 @@ jobs:
         with:
           bun-version: latest
 
-      - name: Get package version
-        id: pkgver
-        run: echo "VERSION=v$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+      - name: Resolve release version
+        id: version
+        shell: bash
+        run: |
+          INPUT_TAG='${{ github.event.inputs.version_tag }}'
+          HEAD_TAG=$(git tag --points-at HEAD | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n1 || true)
+
+          if [[ -n "$INPUT_TAG" ]]; then
+            VERSION="$INPUT_TAG"
+          elif [[ -n "$HEAD_TAG" ]]; then
+            VERSION="$HEAD_TAG"
+          else
+            VERSION="v$(node -p "require('./package.json').version")"
+          fi
+
+          if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid release version: $VERSION" >&2
+            exit 1
+          fi
+
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Using release version: $VERSION"
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -43,7 +62,7 @@ jobs:
       - name: Create dist archive
         run: |
           cp ./remote/* ./dist/ 2>/dev/null || true
-          cd dist && zip -r ../mainsail-cnc-${{ steps.pkgver.outputs.VERSION }}.zip . && cd ..
+          cd dist && zip -r ../mainsail-cnc-${{ steps.version.outputs.VERSION }}.zip . && cd ..
 
       - name: Upload dist artifact
         uses: actions/upload-artifact@v5
@@ -58,22 +77,34 @@ jobs:
 
       - name: Write release notes
         run: |
-          echo "### Auto-built from commit ${{ github.sha }}" > nightly-notes.md
-          echo "" >> nightly-notes.md
-          echo "---" >> nightly-notes.md
-          echo "### Changelog" >> nightly-notes.md
-          echo "" >> nightly-notes.md
-          PREV=$(git describe --tags --match 'nightly-main-*' --abbrev=0 2>/dev/null || echo "")
-          python3 scripts/_gen_changelog.py "$PREV" >> nightly-notes.md
+          echo "### Auto-built from commit ${{ github.sha }}" > release-notes.md
+          echo "" >> release-notes.md
+          echo "---" >> release-notes.md
+          echo "### Changelog" >> release-notes.md
+          echo "" >> release-notes.md
+          CURRENT='${{ steps.version.outputs.VERSION }}'
+          PREV=$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | grep -Fxv "$CURRENT" | head -n1 || echo "")
+          python3 scripts/_gen_changelog.py "$PREV" >> release-notes.md
 
-      - name: Publish nightly release
+      - name: Publish release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          NIGHTLY_TAG="nightly-main-$(date +%Y%m%d)-${GITHUB_RUN_ID}"
-          echo "Creating nightly release: $NIGHTLY_TAG"
-          gh release create "$NIGHTLY_TAG" \
-            --title "${{ steps.pkgver.outputs.VERSION }}-nightly-main (${{ steps.commit.outputs.SHA_SHORT }})" \
-            --notes-file nightly-notes.md \
-            --target main \
-            mainsail-cnc-${{ steps.pkgver.outputs.VERSION }}.zip
+          VERSION='${{ steps.version.outputs.VERSION }}'
+          ASSET="mainsail-cnc-${VERSION}.zip"
+
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            echo "Updating existing release: $VERSION"
+            gh release upload "$VERSION" "$ASSET" --clobber
+            gh release edit "$VERSION" \
+              --title "${VERSION} (${{ steps.commit.outputs.SHA_SHORT }})" \
+              --notes-file release-notes.md \
+              --target main
+          else
+            echo "Creating release: $VERSION"
+            gh release create "$VERSION" \
+              --title "${VERSION} (${{ steps.commit.outputs.SHA_SHORT }})" \
+              --notes-file release-notes.md \
+              --target main \
+              "$ASSET"
+          fi
