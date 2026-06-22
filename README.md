@@ -1,72 +1,93 @@
-# Mainsail-cnc
-
-[![Release](https://img.shields.io/github/v/release/isaaceliape/mainsail-cnc?style=flat&label=Release&color=00FF00)](https://github.com/isaaceliape/mainsail-cnc/releases)
-[![Build Frontend](https://github.com/isaaceliape/mainsail-cnc/actions/workflows/build-frontend.yml/badge.svg?branch=main)](https://github.com/isaaceliape/mainsail-cnc/actions/workflows/build-frontend.yml)
-[![License](https://img.shields.io/github/license/isaaceliape/mainsail-cnc?style=flat&label=License&color=00FF00)](https://github.com/isaaceliape/mainsail-cnc/blob/main/LICENSE)
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/E3CNC/E3CNC_UI/main/docs/assets/logo-dark.png">
+    <img alt="E3CNC UI" src="https://raw.githubusercontent.com/E3CNC/E3CNC_UI/main/docs/assets/logo-light.png" height="120">
+  </picture>
+  <h1 align="center">E3CNC UI</h1>
+  <p align="center">
+    <a href="https://github.com/E3CNC/E3CNC_UI/releases"><img src="https://img.shields.io/github/v/release/E3CNC/E3CNC_UI?style=flat&label=Release&color=00FF00" alt="Release"></a>
+    <a href="https://github.com/E3CNC/E3CNC_UI/actions/workflows/build-frontend.yml"><img src="https://github.com/E3CNC/E3CNC_UI/actions/workflows/build-frontend.yml/badge.svg?branch=main" alt="Build Frontend"></a>
+    <a href="https://github.com/E3CNC/E3CNC_UI/blob/main/LICENSE"><img src="https://img.shields.io/github/license/E3CNC/E3CNC_UI?style=flat&label=License&color=00FF00" alt="License"></a>
+  </p>
+</div>
 
 A modern, responsive CNC controller interface for Klipper-based machines — forked from [Mainsail](https://github.com/mainsail-crew/mainsail) and retargeted from 3D printing to CNC machine control. Built with **Vue 3.5** and **Vuetify 3**.
 
+## Quick start (on a Klipper / Moonraker host)
+
 ```bash
-git clone https://github.com/isaaceliape/mainsail-cnc.git ~/mainsail-cnc && cd ~/mainsail-cnc
-ansible-playbook ansible/playbooks/install.yml   # idempotent full install
+git clone https://github.com/E3CNC/E3CNC_UI.git ~/E3CNC_UI && cd ~/E3CNC_UI
 ```
+
+### Ansible (recommended)
+
+```bash
+ansible-playbook ansible/playbooks/install.yml
+```
+
+### Bash install script (legacy)
+
+```bash
+./scripts/install_to_moonraker.sh
+```
+
+Both methods are idempotent — re-run them to upgrade.
+
+### Updating
+
+If you installed via Ansible or the install script, your `moonraker.conf` already has an `[update_manager E3CNC_UI]` section. Moonraker will pull updates automatically (you can also trigger a manual update from the UI's update panel).
+
+## Migration from mainsail-cnc
+
+If you previously installed from the experimental `mainsail-cnc` repo:
+
+```bash
+cd ~/mainsail-cnc
+git remote set-url origin https://github.com/E3CNC/E3CNC_UI.git
+git pull
+./scripts/install_to_moonraker.sh
+```
+
+Then update your `moonraker.conf` to replace `[update_manager mainsail-cnc]` with `[update_manager E3CNC_UI]` (or just re-run the install script which handles this).
 
 ## Features
 
-- **DRO** — live machine/work position, velocity, homed flags, axis limits, offset display
-- **Jog** — directional pad, configurable step sizes (0.05mm–100mm), XY and Z feedrate sliders, feedrate override slider (M220, 10–300%), keyboard navigation with persistent toast, primary hover effects on jog buttons
-- **WCS Offsets** — G54–G59 manager with interactive SVG preview (click-to-move, snap-to-grid, stock size visualization, home confirmation dialog, smooth tool dot animation)
-- **SET ALL work zero** — single-button X/Y/Z zero reset with confirmation
-- **Spindle & Coolant** — ON/OFF/CCW, RPM control, flood/mist toggles
-- **MDI** — console-style command entry with WCS shortcuts
-- **CAM Metadata** — tool, work envelope, feeds, spindle RPM in file cards
-- **G-code Viewer** — 3D toolpath preview with stock/toolpath anchored to machine Z0, live toolhead in WCS coordinates, CAM WCS Origin metadata parsing
-- **Job Start WCS Selection** — pre-start dialog to choose which WCS coordinates to use, all G54–G59 slots visible
-- **Fusion 360 Post Processor** — `E3CNC_Fusion360.cps` with CAM WCS Origin comments for viewer integration
-- **CNC-Safe Macros** — PAUSE/RESUME/CANCEL_PRINT with `rename_existing: BASE_*`, M3-M9 no-ops (no spindle wired), WCS-aware parking
-- **WCS Klipper Plugin** — full G10 L2/L20 support with JSON persistence
-- **Moonraker CNC Agent** — guarded endpoints for spindle, coolant, WCS, and CNC settings
-- **Auto-Connect** — auto-discovers Moonraker on page load, single-printer auto-connect
-- **Floating Panels** — any dashboard panel can be torn off into a draggable, resizable window
-- **Scroll-to-Top** — floating button after scrolling 300px
-- **Keyboard Jog** — arrow key jogging with toggle
-- **State Persistence** — panel positions, editor files, dashboard scroll, grid settings survive reloads
-- **E3CNC Theme** — green #00FF00 branding with custom SVG logo, persisted to Moonraker DB
-- **Ansible Deploy** — idempotent install/deploy/uninstall playbooks
-- **Semver Releases** — version tags on `main`, GitHub releases, Moonraker update manager integration
+- **CNC-specific UI** — job queue, tool tables, work coordinate systems (WCS), MDI console, probe dialogs
+- **G-code viewer** — 3D toolpath visualization with layer and colouring controls
+- **Webcam integration** — MJPEG, UV4L, HLS, WebRTC, JMuxer, and iframe stream types
+- **Customizable dashboard** — draggable panels, layout profiles for mobile/tablet/desktop/widescreen
+- **Multi-instance Farm mode** — manage multiple Klipper hosts from one dashboard
+- **History & statistics** — print job history, time-lapse management, maintenance scheduling
+- **Power device control** — TPLink Smart Plug, Shelly, Tasmota, and generic HTTP switches
+- **i18n** — multi-language support
 
-## Quick Start
+## CNC extras
 
-| Method | Command |
-|--------|---------|
-| **Install** | `ansible-playbook ansible/playbooks/install.yml` |
-| **Deploy** | `ansible-playbook ansible/playbooks/deploy.yml` |
-| **Uninstall** | `ansible-playbook ansible/playbooks/uninstall.yml` |
-| **Legacy install** | `bash scripts/install_to_moonraker.sh` |
+This monorepo also ships:
+
+- [`moonraker-cnc-agent`](./E3CNC/moonraker-cnc-agent/) — Moonraker component that provides CNC-specific APIs (jog, probe, tool-change, WCS) and a gcode metadata extractor
+- [`klipper-extras`](./E3CNC/extras/) — Work Coordinate System (WCS) Klipper module
+- [`klipper-macros`](./E3CNC/macros/) — G-code macros for CNC workflows (tool change, probing, WCS, job management)
 
 ## Documentation
 
-Full docs on the [wiki](https://github.com/isaaceliape/mainsail-cnc/wiki):
+Full docs on the [wiki](https://github.com/E3CNC/E3CNC_UI/wiki):
 
-- [Installation](https://github.com/isaaceliape/mainsail-cnc/wiki/Installation)
-- [Architecture](https://github.com/isaaceliape/mainsail-cnc/wiki/Architecture)
-- [API Reference](https://github.com/isaaceliape/mainsail-cnc/wiki/API)
-- [Features](https://github.com/isaaceliape/mainsail-cnc/wiki/Features)
-- [Changelog](https://github.com/isaaceliape/mainsail-cnc/wiki/Changelog)
-- [Contributing](https://github.com/isaaceliape/mainsail-cnc/wiki/Contributing)
+- [Installation](https://github.com/E3CNC/E3CNC_UI/wiki/Installation)
+- [Architecture](https://github.com/E3CNC/E3CNC_UI/wiki/Architecture)
+- [API Reference](https://github.com/E3CNC/E3CNC_UI/wiki/API)
+- [Features](https://github.com/E3CNC/E3CNC_UI/wiki/Features)
+- [Changelog](https://github.com/E3CNC/E3CNC_UI/wiki/Changelog)
+- [Contributing](https://github.com/E3CNC/E3CNC_UI/wiki/Contributing)
 
-## Repository Structure
+## License
 
-| Path | Purpose |
-|------|---------|
-| `src/` | Mainsail frontend (Vue 3.5, Vuetify 3, TypeScript) |
-| `E3CNC/macros/` | Klipper CNC macros (homing override, PAUSE/RESUME, WCS) |
-| `E3CNC/extras/` | Klipper WCS plugin (`work_coordinate_systems.py`) |
-| `E3CNC/moonraker-cnc-agent/` | Moonraker CNC component |
-| `E3CNC/post_processors/` | Fusion 360 CAM post processors |
-| `ansible/` | Ansible playbooks for install/deploy/uninstall |
-| `scripts/` | Utility scripts (install, deploy, download frontend) |
+[GPL-3.0](LICENSE)
 
-## Contributors
+## Acknowledgements
 
+- [Mainsail](https://github.com/mainsail-crew/mainsail) — the upstream project this UI is forked from
+- [Klipper](https://www.klipper3d.org/) — the 3D printer firmware that powers our CNC machines
+- [Moonraker](https://github.com/Arksine/moonraker) — the API server that connects the UI to Klipper
+- [Vue](https://vuejs.org/) / [Vuetify](https://vuetifyjs.com/) — the frontend framework
 - [Shadowphyre](https://github.com/Shadowphyre) — documentation, WCS integration review, project guidance

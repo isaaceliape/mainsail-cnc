@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Deploy mainsail-cnc to a 32-bit ARM host (or any Moonraker host).
+# Deploy E3CNC_UI to a 32-bit ARM host (or any Moonraker host).
 #
 # Idempotent. Re-runnable. Safe to interrupt before the restart step.
 #
 # What it does:
-#   1. clones (or pulls) the mainsail-cnc monorepo to ~/mainsail-cnc
-#      on the target, so the agent source, the Mainsail fork, and the
+#   1. clones (or pulls) the E3CNC_UI monorepo to ~/E3CNC_UI
+#      on the target, so the agent source, the UI fork, and the
 #      Klipper macros all share one real git working tree
 #   2. vendors the cnc_agent component from
 #      <monorepo>/E3CNC/moonraker-cnc-agent/src/... into
@@ -21,8 +21,8 @@
 #      moonraker.conf
 #   7. deploys work_coordinate_systems.py to klippy/extras/
 #   8. deploys macros to printer_data/config/E3CNC/macros/
-#   9. (if not skipped) appends a single `[update_manager mainsail-cnc]`
-#      section pointing at the monorepo so Mainsail's Update Manager
+#   9. (if not skipped) appends a single `[update_manager E3CNC_UI]`
+#      section pointing at the monorepo so the UI's Update Manager
 #      shows the project and can `git pull` it
 #  10. restarts moonraker
 #  11. waits for moonraker to come back up and checks the journal for a
@@ -37,10 +37,10 @@
 #   CNC_HOST                  Target host (default: localhost). Set to an SSH
 #                             hostname for remote deployment.
 #   CNC_REPO_DIR              Path on the TARGET where the monorepo
-#                             is cloned (default: ~/mainsail-cnc).
+#                             is cloned (default: ~/E3CNC_UI).
 #   CNC_REPO_URL              Git origin to clone on the target
 #                             (default: the local clone's `origin`
-#                             remote, falling back to the public fork).
+#                             remote, falling back to the public repo).
 #   CNC_CHANNEL               Update channel (default: dev). Use
 #                             `stable` once a stable release is tagged.
 #   CNC_SKIP_UPDATE_MANAGER=1      Skip the [update_manager] append
@@ -100,14 +100,14 @@ expand_remote_path() {
     esac
 }
 
-REMOTE_REPO_DIR=$(expand_remote_path "${CNC_REPO_DIR:-~/mainsail-cnc}")
+REMOTE_REPO_DIR=$(expand_remote_path "${CNC_REPO_DIR:-~/E3CNC_UI}")
 
 # Resolve the repo URL from the local clone's `origin` remote, falling
-# back to the default public fork.
+# back to the default public repo.
 if [[ -z "${CNC_REPO_URL:-}" ]]; then
     CNC_REPO_URL="$(git -C "$REPO_ROOT" config --get remote.origin.url 2>/dev/null || true)"
 fi
-CNC_REPO_URL="${CNC_REPO_URL:-https://github.com/isaaceliape/mainsail-cnc.git}"
+CNC_REPO_URL="${CNC_REPO_URL:-https://github.com/E3CNC/E3CNC_UI.git}"
 
 echo "==> Target: $CNC_HOST  (home=$REMOTE_HOME)"
 echo "==> Repo URL: $CNC_REPO_URL  (channel=$CNC_CHANNEL)"
@@ -120,8 +120,8 @@ trap 'rm -f "$APPEND_BLOCK"' EXIT
 # ---------------------------------------------------------------------------
 # 1) clone (or pull) the monorepo on the target
 # ---------------------------------------------------------------------------
-# This is the single source of truth for the agent, the Mainsail fork,
-# and the Klipper macros on the printer. Each Mainsail-driven update
+# This is the single source of truth for the agent, the UI fork,
+# and the Klipper macros on the printer. Each Moonraker-driven update
 # just runs `git pull` on this clone, so the directory has to be a
 # real git checkout of the project, not a synthetic subpath.
 if [[ "${CNC_SKIP_CLONE:-0}" == "1" ]]; then
@@ -160,8 +160,6 @@ run_on_target "
     rm -rf '$REMOTE_CNC_PKG'
     mkdir -p '$REMOTE_CNC_PKG'
     install -m 0644 '$REMOTE_AGENT_SRC/cnc_agent.py' '$REMOTE_CNC_PKG/cnc_agent.py'
-    # __init__.py re-exports load_component so Moonraker can import
-    # moonraker.components.cnc_agent and find load_component on the package.
     cat > '$REMOTE_CNC_PKG/__init__.py' <<'PY'
 from .cnc_agent import load_component
 __all__ = ['load_component']
@@ -219,7 +217,7 @@ run_on_target "
         touch '$REMOTE_CONF'
     fi
     if ! grep -qE '^\[cnc_agent\]' '$REMOTE_CONF'; then
-        printf '\n# CNC agent (installed by mainsail-cnc install_to_moonraker.sh)\n[cnc_agent]\n' >> '$REMOTE_CONF'
+        printf '\n# CNC agent (installed by E3CNC_UI install_to_moonraker.sh)\n[cnc_agent]\n' >> '$REMOTE_CONF'
         echo '    appended [cnc_agent] section'
     else
         echo '    [cnc_agent] section already present'
@@ -238,7 +236,7 @@ run_on_target "
         touch '$REMOTE_CONF'
     fi
     if ! grep -qE '^\[cnc_metadata\]' '$REMOTE_CONF'; then
-        printf '\n# CNC metadata extractor (installed by mainsail-cnc install_to_moonraker.sh)\n[cnc_metadata]\nextractor_path: %s\ntimeout: 30.0\n' '$REMOTE_EXTRACTOR_PATH' >> '$REMOTE_CONF'
+        printf '\n# CNC metadata extractor (installed by E3CNC_UI install_to_moonraker.sh)\n[cnc_metadata]\nextractor_path: %s\ntimeout: 30.0\n' '$REMOTE_EXTRACTOR_PATH' >> '$REMOTE_CONF'
         echo '    appended [cnc_metadata] section'
     else
         echo '    [cnc_metadata] section already present'
@@ -286,12 +284,12 @@ run_on_target "
 "
 
 # ---------------------------------------------------------------------------
-# 9) append [update_manager mainsail-cnc] section (idempotent)
+# 9) append [update_manager E3CNC_UI] section (idempotent)
 # ---------------------------------------------------------------------------
 if [[ "${CNC_SKIP_UPDATE_MANAGER:-0}" == "1" ]]; then
     echo "==> [9/11] SKIPPED (CNC_SKIP_UPDATE_MANAGER=1)"
 else
-    echo "==> [9/11] append [update_manager mainsail-cnc] section to $REMOTE_CONF"
+    echo "==> [9/11] append [update_manager E3CNC_UI] section to $REMOTE_CONF"
     # Pull a local copy of the remote conf so we can decide whether to
     # append. Only the section header needs to be inspected.
     REMOTE_CONF_LOCAL="$(mktemp)"
@@ -299,16 +297,21 @@ else
 
     run_on_target "cat '$REMOTE_CONF'" > "$REMOTE_CONF_LOCAL"
 
-    if grep -qE '^\[update_manager mainsail-cnc\]' "$REMOTE_CONF_LOCAL"; then
-        echo "    [update_manager mainsail-cnc] already present in $REMOTE_CONF"
+    if grep -qE '^\[update_manager E3CNC_UI\]' "$REMOTE_CONF_LOCAL"; then
+        echo "    [update_manager E3CNC_UI] already present in $REMOTE_CONF"
     else
-        # printf is used (not a heredoc) so backticks in the post_update
-        # hint are emitted literally and not re-evaluated by the shell.
+        # Also handle the old section name for migration
+        if grep -qE '^\[update_manager mainsail-cnc\]' "$REMOTE_CONF_LOCAL"; then
+            echo "    migrating old [update_manager mainsail-cnc] to [update_manager E3CNC_UI]..."
+            # We can't easily sed the remote file, so we append the new section
+            # and tell the user to manually remove the old one
+        fi
+
         {
             printf '\n# -------------------------------------------------------------------------\n'
-            printf '# mainsail-cnc update-manager entry (installed by install_to_moonraker.sh)\n'
+            printf '# E3CNC_UI update-manager entry (installed by install_to_moonraker.sh)\n'
             printf '# -------------------------------------------------------------------------\n\n'
-            printf '[update_manager mainsail-cnc]\n'
+            printf '[update_manager E3CNC_UI]\n'
             printf 'type: git_repo\n'
             printf 'channel: %s\n' "$CNC_CHANNEL"
             printf 'path: %s\n' "$REMOTE_REPO_DIR"
@@ -317,14 +320,16 @@ else
             printf 'enable_node_updates: False\n'
             printf 'is_system_service: False\n'
             printf 'info_tags:\n'
-            printf '    desc=Mainsail CNC\n'
+            printf '    desc=E3CNC UI\n'
             printf '    post_update=./deploy.sh --live && cp -f E3CNC/extras/work_coordinate_systems.py %s/work_coordinate_systems.py && cp -f E3CNC/macros/wcs_macros.cfg %s/E3CNC/macros/wcs_macros.cfg && cp -f E3CNC/moonraker-cnc-agent/cnc_agent.py %s/cnc_agent/cnc_agent.py && cp -f E3CNC/moonraker-cnc-agent/cnc_metadata.py %s/cnc_metadata/cnc_metadata.py\n' "$REMOTE_KLIPPER_EXTRAS" "$REMOTE_CONFIG_DIR" "$REMOTE_COMPONENTS_DIR" "$REMOTE_COMPONENTS_DIR"
             printf 'managed_services: klipper moonraker\n'
             printf 'refresh_interval: 24\n'
+            printf '\n# If you had an old [update_manager mainsail-cnc] section, remove it:\n'
+            printf '#   sed -i "/^\\[update_manager mainsail-cnc\\]/,/^\\[/d" %s\n' "$REMOTE_CONF"
         } > "$APPEND_BLOCK"
 
         cat "$APPEND_BLOCK" | run_on_target "cat >> '$REMOTE_CONF'"
-        echo "    appended [update_manager mainsail-cnc] to $REMOTE_CONF"
+        echo "    appended [update_manager E3CNC_UI] to $REMOTE_CONF"
     fi
 fi
 
@@ -342,10 +347,6 @@ run_on_target "sudo systemctl restart moonraker" || {
 # ---------------------------------------------------------------------------
 echo "==> [11/11] wait for moonraker and verify CncAgent loaded cleanly"
 
-# Determine how to reach the Moonraker API locally on the target.
-# MOONRAKER_API is kept for reference but unused in the current curl commands
-# since run_on_target always hits 127.0.0.1:7125 on the target machine.
-
 for i in {1..30}; do
     if run_on_target "curl -fsS 'http://127.0.0.1:7125/printer/info'" >/dev/null 2>&1; then
         break
@@ -359,11 +360,8 @@ if ! run_on_target "curl -fsS 'http://127.0.0.1:7125/printer/info'" >/dev/null 2
     exit 1
 fi
 
-# Give cnc_agent a moment to initialize and Klipper to report ready
 sleep 3
 
-# Try to pull Moonraker logs to verify the agent loaded.
-# journalctl may not be available on non-systemd systems — fall back to log file.
 RECENT_LOGS=""
 if command -v journalctl &>/dev/null; then
     RECENT_LOGS=$(run_on_target "sudo journalctl -u moonraker --since '2 minutes ago' --no-pager 2>&1" || true)

@@ -70,8 +70,6 @@ d5e768fc phase2: global infrastructure for Vue 3
 
 ## Ansible Migration (complete)
 
-**Branch**: `main` (parallel to `vue3-migration`)
-
 Replaced the bash-based `install_to_moonraker.sh` / `uninstall.sh` / `deploy.sh`
 with Ansible playbooks for idempotent deployment.
 
@@ -87,38 +85,13 @@ with Ansible playbooks for idempotent deployment.
 Plus fixes discovered during rollout:
 
 - **Nightly CI releases**: `.github/workflows/build-frontend.yml` builds on every
-  push to `main` and publishes `mainsail-cnc-<version>.zip` (semver) as a `nightly-main-<YYYYMMDD>-<run_id>` GitHub release.
+  push to `main` and publishes `E3CNC_UI-<version>.zip` (semver) as a `nightly-main-<YYYYMMDD>-<run_id>` GitHub release.
   Low-RAM devices (32-bit ARM) download the pre-built zip instead of running `vite build`.
 - **`post_update_script`**: Moonraker update manager now runs `scripts/post_update.sh`
   after every `git pull`, which downloads the nightly release, re-vendors the agent,
   re-deploys plugins, and restarts Moonraker automatically.
 - **Fixed missing dep**: `vue-load-image` was imported in `src/main.ts` but missing
   from `package.json` — was blocking all CI builds.
-
-### Key commits
-
-```text
-dbdf554a docs: update for pre-built nightly releases and automatic post_update_script
-2c071436 chore: rename nightly release asset from mainsail.zip to mainsail-cnc.zip
-cb3dcb81 fix: embed version.json in nightly release zip
-629e4cc5 chore: update bun.lock after adding vue-load-image dependency
-3f4b9c0c fix: add missing vue-load-image dependency to package.json
-8b0a6aa1 fix: use bun instead of npm in build-frontend workflow
-9abe3de4 fix: use pre-built frontend via nightly release instead of building on-device
-3214a9a2 feat: implement Ansible playbooks for install/deploy/uninstall
-a9144473 spec: add Ansible migration plan
-```
-
-## Gemini CLI Agent
-
-- **Purpose**: Interactive CLI agent specializing in software engineering tasks for this project.
-- **Current Role**: Frontend maintenance, docs sync, Ansible deployment for the Mainsail fork (Vue 3.5, Vuetify 3)
-- **Access**: shell commands, file system, Chrome DevTools, SSH to the CNC host using `ssh cnc` (configured in `~/.ssh/config`). Always access the CNC host within a `tmux` session — use `tmux new-session -s cnc 'ssh cnc'` or `tmux attach -t cnc` if one already exists.
-- **Package Manager**: Bun (not npm). Use `bun install`, `bun run`, `bunx`.
-- **Dev Server**: Run within `tmux`; check for existing sessions first. HMR is active.
-- **Ansible**: Playbooks at `ansible/playbooks/`. Run `ansible-playbook ansible/playbooks/install.yml` for full install.
-- **Wiki**: The project wiki is available at `~/repos/mainsail-cnc-wiki/` (cloned from `https://github.com/isaaceliape/mainsail-cnc.wiki.git`). Update `Home.md` and `Changelog.md` when shipping significant changes.
-- **CI**: Releases are triggered manually via GitHub Actions (`workflow_dispatch`). Check status with `gh run list`.
 
 ## Operational Guidelines
 
@@ -131,5 +104,6 @@ a9144473 spec: add Ansible migration plan
 - **`@vue/compat`**: Fully removed — app runs on pure Vue 3.5 + Vuetify 3.
 - **Runtime fixes applied**: `i18n.global.t`, `useDisplay()`, `boolMenu`, removed `const mdiXxx = mdiXxx` TDZ bugs across 100+ files.
 - **32-bit ARM builds**: Do NOT run `bun run build` on 32-bit ARM — it OOMs. Use `scripts/download_frontend.sh` or CI nightly releases instead.
-- **Moonraker update manager**: Has `post_update_script: ~/mainsail-cnc/scripts/post_update.sh` which auto-updates frontend + agent on git pull.
+- **Moonraker update manager**: Has `post_update_script: ~/E3CNC_UI/scripts/post_update.sh` which auto-updates frontend + agent on git pull.
+- **Repo location**: This repo (`https://github.com/E3CNC/E3CNC_UI`) is the new home. Users migrating from `mainsail-cnc` should update their git remote.
 - **Ask before pushing**: Never push to remote without asking the user first.
